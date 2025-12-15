@@ -10,7 +10,17 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import type { SearchResult } from "@/types"
+
+// Helper to ensure tag is a string (handles both string and object formats)
+function getTagString(tag: unknown): string {
+  if (typeof tag === "string") return tag
+  if (tag && typeof tag === "object" && "tag" in tag) {
+    return (tag as { tag: string }).tag
+  }
+  return String(tag)
+}
 
 interface SearchDetailModalProps {
   result: SearchResult | null
@@ -43,12 +53,6 @@ export function SearchDetailModal({
 
   const Icon = typeIcons[result.type]
   const typeLabel = typeLabels[result.type]
-
-  // Combine tags for display
-  const tags = [
-    ...(result.tropes || []),
-    ...(result.moods || []),
-  ]
 
   const handleAdd = async () => {
     await onAdd(result)
@@ -130,31 +134,47 @@ export function SearchDetailModal({
             {result.genres && result.genres.length > 0 && (
               <div>
                 <h4 className="text-sm font-medium mb-2">Genres</h4>
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-1.5">
                   {result.genres.slice(0, 5).map((genre, i) => (
-                    <span
-                      key={`genre-${i}`}
-                      className="inline-flex px-2 py-0.5 rounded-full text-xs bg-muted text-muted-foreground"
-                    >
-                      {genre}
-                    </span>
+                    <Badge key={`genre-${i}`} variant="secondary">
+                      {getTagString(genre)}
+                    </Badge>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Tropes & Moods */}
-            {tags.length > 0 && (
+            {/* Tropes */}
+            {result.tropes && result.tropes.length > 0 && (
               <div>
-                <h4 className="text-sm font-medium mb-2">Tropes & Ambiances</h4>
-                <div className="flex flex-wrap gap-1">
-                  {tags.slice(0, 8).map((tag, i) => (
-                    <span
-                      key={`tag-${i}`}
-                      className="inline-flex px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary"
+                <h4 className="text-sm font-medium mb-2">Tropes</h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {result.tropes.slice(0, 6).map((trope, i) => (
+                    <Badge
+                      key={`trope-${i}`}
+                      variant="outline"
+                      className="border-primary/50 text-primary"
                     >
-                      {tag}
-                    </span>
+                      {getTagString(trope)}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Moods */}
+            {result.moods && result.moods.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium mb-2">Ambiance</h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {result.moods.slice(0, 5).map((mood, i) => (
+                    <Badge
+                      key={`mood-${i}`}
+                      variant="outline"
+                      className="border-green-500/50 text-green-600 dark:text-green-400"
+                    >
+                      {getTagString(mood)}
+                    </Badge>
                   ))}
                 </div>
               </div>
@@ -163,17 +183,18 @@ export function SearchDetailModal({
             {/* Content Warnings */}
             {result.contentWarnings && result.contentWarnings.length > 0 && (
               <div>
-                <h4 className="text-sm font-medium mb-2 text-amber-600">
-                  Avertissements de contenu
+                <h4 className="text-sm font-medium mb-2 text-orange-600 dark:text-orange-400">
+                  Avertissements
                 </h4>
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-1.5">
                   {result.contentWarnings.slice(0, 6).map((warning, i) => (
-                    <span
+                    <Badge
                       key={`warning-${i}`}
-                      className="inline-flex px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
+                      variant="outline"
+                      className="border-orange-500/50 text-orange-600 dark:text-orange-400"
                     >
-                      {warning}
-                    </span>
+                      ⚠️ {getTagString(warning)}
+                    </Badge>
                   ))}
                 </div>
               </div>
