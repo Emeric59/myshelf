@@ -66,7 +66,7 @@ export default function AskPage() {
     try {
       // Search for the media first
       const searchResponse = await fetch(
-        `/api/search?q=${encodeURIComponent(reco.title)}&type=${reco.type === 'book' ? 'books' : reco.type === 'movie' ? 'movies' : 'shows'}`
+        `/api/search?q=${encodeURIComponent(reco.title)}&type=${reco.type}`
       )
       const searchData = await searchResponse.json() as { results?: Array<{ id: string; title: string }> }
 
