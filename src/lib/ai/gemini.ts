@@ -37,6 +37,7 @@ export interface RecommendationRequest {
   userQuery: string
   context: UserContext
   mediaTypes?: ("book" | "movie" | "show")[]
+  minYear?: number // Année minimum pour les recommandations
 }
 
 export interface Recommendation {
@@ -62,7 +63,7 @@ function getGeminiClient() {
 }
 
 // Construire le prompt système
-function buildSystemPrompt(context: UserContext): string {
+function buildSystemPrompt(context: UserContext, minYear?: number): string {
   const lovedTropesStr = context.lovedTropes.length > 0
     ? `Tropes adorés: ${context.lovedTropes.join(", ")}`
     : ""
@@ -94,6 +95,10 @@ function buildSystemPrompt(context: UserContext): string {
     .map(s => `- "${s.title}" (${s.rating}/5)`)
     .join("\n")
 
+  const yearConstraint = minYear
+    ? `6. Ne recommande QUE des médias sortis en ${minYear} ou après`
+    : ""
+
   return `Tu es un assistant de recommandation de médias (livres, films, séries) personnalisé.
 
 RÈGLES ABSOLUES:
@@ -102,6 +107,7 @@ RÈGLES ABSOLUES:
 3. Recommande uniquement des médias qui EXISTENT RÉELLEMENT
 4. Réponds toujours en français
 5. Sois enthousiaste mais concis
+${yearConstraint}
 
 PROFIL DE L'UTILISATEUR:
 
@@ -141,7 +147,7 @@ export async function getRecommendations(
 ): Promise<RecommendationResponse> {
   const genAI = getGeminiClient()
 
-  const systemPrompt = buildSystemPrompt(request.context)
+  const systemPrompt = buildSystemPrompt(request.context, request.minYear)
 
   let userPrompt = request.userQuery
   if (request.mediaTypes && request.mediaTypes.length > 0) {
@@ -210,6 +216,7 @@ export function buildUserContext(data: {
   movies: Array<{ title: string; rating?: number; genres?: string; status: string }>
   shows: Array<{ title: string; rating?: number; genres?: string; status: string }>
   tropePreferences: Array<{ name: string; preference: string }>
+  dismissedTitles?: string[]
 }): UserContext {
   const parseGenres = (genres?: string): string[] => {
     if (!genres) return []
@@ -245,11 +252,12 @@ export function buildUserContext(data: {
       genres: parseGenres(s.genres)
     }))
 
-  // Exclure tous les médias de la bibliothèque
+  // Exclure tous les médias de la bibliothèque + les médias refusés
   const excludedTitles = [
     ...data.books.map(b => b.title),
     ...data.movies.map(m => m.title),
-    ...data.shows.map(s => s.title)
+    ...data.shows.map(s => s.title),
+    ...(data.dismissedTitles || [])
   ]
 
   // Tropes par préférence

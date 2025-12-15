@@ -1,12 +1,16 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { ArrowLeft, Send, Sparkles, Loader2, Book, Film, Tv, Check, Search } from "lucide-react"
+import { ArrowLeft, Send, Sparkles, Loader2, Book, Film, Tv, Check, X } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
+import { Slider } from "@/components/ui/slider"
+import { DismissDialog } from "@/components/media"
 import { cn } from "@/lib/utils"
+
+const CURRENT_YEAR = new Date().getFullYear()
 
 interface RecommendationItem {
   id: string
@@ -38,7 +42,16 @@ export default function AskPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [yearFilter, setYearFilter] = useState<number | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Dismiss dialog state
+  const [dismissDialogOpen, setDismissDialogOpen] = useState(false)
+  const [selectedForDismiss, setSelectedForDismiss] = useState<{
+    messageId: string
+    reco: RecommendationItem
+  } | null>(null)
+  const [isDismissing, setIsDismissing] = useState(false)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -135,7 +148,10 @@ export default function AskPage() {
       const response = await fetch("/api/recommendations/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: input.trim() }),
+        body: JSON.stringify({
+          query: input.trim(),
+          ...(yearFilter !== null && { minYear: yearFilter }),
+        }),
       })
 
       const data = await response.json() as {
@@ -178,6 +194,48 @@ export default function AskPage() {
 
   const handleSuggestionClick = (suggestion: string) => {
     setInput(suggestion)
+  }
+
+  // Handle dismiss
+  const openDismissDialog = (messageId: string, reco: RecommendationItem) => {
+    setSelectedForDismiss({ messageId, reco })
+    setDismissDialogOpen(true)
+  }
+
+  const handleDismiss = async (reason: "already_consumed" | "not_interested" | "other", detail?: string) => {
+    if (!selectedForDismiss) return
+
+    setIsDismissing(true)
+    try {
+      await fetch("/api/dismissed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mediaType: selectedForDismiss.reco.type,
+          title: selectedForDismiss.reco.title,
+          reason,
+          reasonDetail: detail,
+        }),
+      })
+
+      // Remove from UI
+      setMessages(prev => prev.map(msg => {
+        if (msg.id === selectedForDismiss.messageId && msg.recommendations) {
+          return {
+            ...msg,
+            recommendations: msg.recommendations.filter(r => r.id !== selectedForDismiss.reco.id)
+          }
+        }
+        return msg
+      }))
+
+      setDismissDialogOpen(false)
+      setSelectedForDismiss(null)
+    } catch (error) {
+      console.error("Error dismissing:", error)
+    } finally {
+      setIsDismissing(false)
+    }
   }
 
   return (
@@ -272,23 +330,35 @@ export default function AskPage() {
                                   "{reco.reason}"
                                 </p>
                               </div>
-                              <Button
-                                size="sm"
-                                variant={reco.added ? "default" : "secondary"}
-                                disabled={reco.loading || reco.added}
-                                onClick={() => handleAddToLibrary(message.id, reco.id, reco)}
-                              >
-                                {reco.loading ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : reco.added ? (
-                                  <>
-                                    <Check className="h-4 w-4 mr-1" />
-                                    Ajouté
-                                  </>
-                                ) : (
-                                  "Ajouter"
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  size="sm"
+                                  variant={reco.added ? "default" : "secondary"}
+                                  disabled={reco.loading || reco.added}
+                                  onClick={() => handleAddToLibrary(message.id, reco.id, reco)}
+                                >
+                                  {reco.loading ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : reco.added ? (
+                                    <>
+                                      <Check className="h-4 w-4 mr-1" />
+                                      Ajouté
+                                    </>
+                                  ) : (
+                                    "Ajouter"
+                                  )}
+                                </Button>
+                                {!reco.added && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="text-muted-foreground hover:text-destructive"
+                                    onClick={() => openDismissDialog(message.id, reco)}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
                                 )}
-                              </Button>
+                              </div>
                             </div>
                           </CardContent>
                         </Card>
@@ -314,19 +384,39 @@ export default function AskPage() {
 
       {/* Input */}
       <div className="sticky bottom-0 border-t bg-background p-4">
-        <form onSubmit={handleSubmit} className="container flex gap-2">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Décris ce que tu cherches..."
-            className="flex-1"
-            disabled={isLoading}
+        <div className="container space-y-3">
+          {/* Year filter */}
+          <Slider
+            value={yearFilter}
+            onChange={setYearFilter}
+            min={1985}
+            max={CURRENT_YEAR}
+            nullLabel="Toutes les années"
           />
-          <Button type="submit" size="icon" disabled={!input.trim() || isLoading}>
-            <Send className="h-4 w-4" />
-          </Button>
-        </form>
+          <form onSubmit={handleSubmit} className="flex gap-2">
+            <Input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Décris ce que tu cherches..."
+              className="flex-1"
+              disabled={isLoading}
+            />
+            <Button type="submit" size="icon" disabled={!input.trim() || isLoading}>
+              <Send className="h-4 w-4" />
+            </Button>
+          </form>
+        </div>
       </div>
+
+      {/* Dismiss Dialog */}
+      <DismissDialog
+        open={dismissDialogOpen}
+        onOpenChange={setDismissDialogOpen}
+        title={selectedForDismiss?.reco.title || ""}
+        mediaType={selectedForDismiss?.reco.type || "book"}
+        onDismiss={handleDismiss}
+        isLoading={isDismissing}
+      />
     </div>
   )
 }

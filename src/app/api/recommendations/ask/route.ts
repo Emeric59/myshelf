@@ -10,9 +10,10 @@ export async function POST(request: NextRequest) {
   try {
     const { env } = getRequestContext()
     const body = await request.json()
-    const { query, mediaTypes } = body as {
+    const { query, mediaTypes, minYear } = body as {
       query: string
       mediaTypes?: ("book" | "movie" | "show")[]
+      minYear?: number
     }
 
     if (!query || query.trim().length === 0) {
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Récupérer les données utilisateur pour le contexte
-    const [booksResult, moviesResult, showsResult, tropesResult] = await Promise.all([
+    const [booksResult, moviesResult, showsResult, tropesResult, dismissedResult] = await Promise.all([
       // Livres avec métadonnées
       env.DB.prepare(`
         SELECT b.title, b.author, b.genres, ub.rating, ub.status
@@ -47,6 +48,10 @@ export async function POST(request: NextRequest) {
         SELECT t.name, utp.preference
         FROM user_trope_preferences utp
         JOIN tropes t ON utp.trope_id = t.id
+      `).all(),
+      // Médias refusés
+      env.DB.prepare(`
+        SELECT title FROM dismissed_media
       `).all(),
     ])
 
@@ -75,6 +80,7 @@ export async function POST(request: NextRequest) {
         name: string
         preference: string
       }>,
+      dismissedTitles: (dismissedResult.results as Array<{ title: string }>).map(d => d.title),
     })
 
     // Appeler Gemini
@@ -82,6 +88,7 @@ export async function POST(request: NextRequest) {
       userQuery: query,
       context,
       mediaTypes,
+      minYear,
     })
 
     return NextResponse.json(response)

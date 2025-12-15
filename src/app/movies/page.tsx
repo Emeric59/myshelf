@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { sortMovies, sortOptions, type SortOption } from "@/lib/utils/sorting"
 import { useMovies } from "@/lib/hooks"
 import type { MovieStatus } from "@/types"
 
@@ -23,11 +24,12 @@ export default function MoviesPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<MovieStatus | "all">("all")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [sortBy, setSortBy] = useState<SortOption>("in_progress")
 
   const { movies, counts, isLoading } = useMovies()
 
   const filteredMovies = useMemo(() => {
-    return movies.filter((movie) => {
+    const filtered = movies.filter((movie) => {
       const matchesSearch =
         searchQuery === "" ||
         movie.title?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -35,7 +37,8 @@ export default function MoviesPage() {
         statusFilter === "all" || movie.status === statusFilter
       return matchesSearch && matchesStatus
     })
-  }, [movies, searchQuery, statusFilter])
+    return sortMovies(filtered, sortBy)
+  }, [movies, searchQuery, statusFilter, sortBy])
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -87,9 +90,22 @@ export default function MoviesPage() {
           </div>
 
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              {filteredMovies.length} résultat{filteredMovies.length > 1 ? "s" : ""}
-            </p>
+            <div className="flex items-center gap-3">
+              <p className="text-sm text-muted-foreground">
+                {filteredMovies.length} résultat{filteredMovies.length > 1 ? "s" : ""}
+              </p>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className="text-sm border rounded-md px-2 py-1 bg-background"
+              >
+                {sortOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="flex items-center gap-1">
               <Button
                 variant={viewMode === "grid" ? "secondary" : "ghost"}

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { sortShows, sortOptions, type SortOption } from "@/lib/utils/sorting"
 import { useShows } from "@/lib/hooks"
 import type { ShowStatus } from "@/types"
 
@@ -26,11 +27,12 @@ export default function ShowsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<ShowStatus | "all">("all")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [sortBy, setSortBy] = useState<SortOption>("in_progress")
 
   const { shows, counts, isLoading } = useShows()
 
   const filteredShows = useMemo(() => {
-    return shows.filter((show) => {
+    const filtered = shows.filter((show) => {
       const matchesSearch =
         searchQuery === "" ||
         show.title?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -38,7 +40,8 @@ export default function ShowsPage() {
         statusFilter === "all" || show.status === statusFilter
       return matchesSearch && matchesStatus
     })
-  }, [shows, searchQuery, statusFilter])
+    return sortShows(filtered, sortBy)
+  }, [shows, searchQuery, statusFilter, sortBy])
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -90,9 +93,22 @@ export default function ShowsPage() {
           </div>
 
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              {filteredShows.length} résultat{filteredShows.length > 1 ? "s" : ""}
-            </p>
+            <div className="flex items-center gap-3">
+              <p className="text-sm text-muted-foreground">
+                {filteredShows.length} résultat{filteredShows.length > 1 ? "s" : ""}
+              </p>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className="text-sm border rounded-md px-2 py-1 bg-background"
+              >
+                {sortOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="flex items-center gap-1">
               <Button
                 variant={viewMode === "grid" ? "secondary" : "ghost"}

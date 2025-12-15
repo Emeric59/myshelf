@@ -10,10 +10,22 @@ import type { SearchResult, MediaType } from "@/types"
 // Runtime edge for Cloudflare
 export const runtime = "edge"
 
+// Helper to filter by year
+function filterByYear(results: SearchResult[], minYear: number | null): SearchResult[] {
+  if (!minYear) return results
+  return results.filter((item) => {
+    if (!item.year) return true // Keep items without year info
+    const year = parseInt(item.year, 10)
+    return !isNaN(year) && year >= minYear
+  })
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const query = searchParams.get("q")
   const type = searchParams.get("type") as MediaType | null
+  const minYearParam = searchParams.get("minYear")
+  const minYear = minYearParam ? parseInt(minYearParam, 10) : null
 
   if (!query || query.length < 2) {
     return NextResponse.json(
@@ -106,10 +118,14 @@ export async function GET(request: NextRequest) {
 
     await Promise.all(searchPromises)
 
+    // Apply year filter
+    const filteredResults = filterByYear(results, minYear)
+
     return NextResponse.json({
-      results,
+      results: filteredResults,
       query,
       type,
+      minYear,
     })
   } catch (error) {
     console.error("Search error:", error)

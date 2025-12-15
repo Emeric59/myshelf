@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { sortBooks, sortOptions, type SortOption } from "@/lib/utils/sorting"
 import { useBooks } from "@/lib/hooks"
 import type { BookStatus } from "@/types"
 
@@ -25,11 +26,12 @@ export default function BooksPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<BookStatus | "all">("all")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [sortBy, setSortBy] = useState<SortOption>("in_progress")
 
   const { books, counts, isLoading } = useBooks()
 
   const filteredBooks = useMemo(() => {
-    return books.filter((book) => {
+    const filtered = books.filter((book) => {
       const matchesSearch =
         searchQuery === "" ||
         book.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -38,7 +40,8 @@ export default function BooksPage() {
         statusFilter === "all" || book.status === statusFilter
       return matchesSearch && matchesStatus
     })
-  }, [books, searchQuery, statusFilter])
+    return sortBooks(filtered, sortBy)
+  }, [books, searchQuery, statusFilter, sortBy])
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -91,11 +94,24 @@ export default function BooksPage() {
             ))}
           </div>
 
-          {/* View toggle */}
+          {/* Sort and view toggle */}
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              {filteredBooks.length} résultat{filteredBooks.length > 1 ? "s" : ""}
-            </p>
+            <div className="flex items-center gap-3">
+              <p className="text-sm text-muted-foreground">
+                {filteredBooks.length} résultat{filteredBooks.length > 1 ? "s" : ""}
+              </p>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className="text-sm border rounded-md px-2 py-1 bg-background"
+              >
+                {sortOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="flex items-center gap-1">
               <Button
                 variant={viewMode === "grid" ? "secondary" : "ghost"}

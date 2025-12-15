@@ -8,8 +8,11 @@ import { BottomNav } from "@/components/layout"
 import { MediaCard, SearchDetailModal } from "@/components/media"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Slider } from "@/components/ui/slider"
 import { cn } from "@/lib/utils"
 import type { MediaType, SearchResult } from "@/types"
+
+const CURRENT_YEAR = new Date().getFullYear()
 
 type FilterType = MediaType | "all"
 
@@ -26,6 +29,7 @@ function SearchContent() {
 
   const [query, setQuery] = useState("")
   const [typeFilter, setTypeFilter] = useState<FilterType>(initialType)
+  const [yearFilter, setYearFilter] = useState<number | null>(null)
   const [results, setResults] = useState<SearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
@@ -49,6 +53,7 @@ function SearchContent() {
       const params = new URLSearchParams({
         q: query,
         ...(typeFilter !== "all" && { type: typeFilter }),
+        ...(yearFilter !== null && { minYear: yearFilter.toString() }),
       })
 
       const response = await fetch(`/api/search?${params}`)
@@ -62,7 +67,7 @@ function SearchContent() {
     } finally {
       setIsLoading(false)
     }
-  }, [query, typeFilter])
+  }, [query, typeFilter, yearFilter])
 
   // Debounced search
   useEffect(() => {
@@ -73,7 +78,7 @@ function SearchContent() {
     }, 500)
 
     return () => clearTimeout(timer)
-  }, [query, typeFilter, performSearch])
+  }, [query, typeFilter, yearFilter, performSearch])
 
   // Open detail modal
   const openDetailModal = (result: SearchResult) => {
@@ -179,7 +184,7 @@ function SearchContent() {
         </div>
 
         {/* Type filters */}
-        <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
+        <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-2">
           {typeFilters.map((filter) => (
             <Badge
               key={filter.value}
@@ -194,6 +199,17 @@ function SearchContent() {
               {filter.label}
             </Badge>
           ))}
+        </div>
+
+        {/* Year filter */}
+        <div className="mb-6">
+          <Slider
+            value={yearFilter}
+            onChange={setYearFilter}
+            min={1985}
+            max={CURRENT_YEAR}
+            nullLabel="Toutes les années"
+          />
         </div>
 
         {/* Loading state */}
