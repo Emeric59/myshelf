@@ -59,12 +59,22 @@
 - [x] Interface conversationnelle connectée
 - [ ] Embeddings avec Cloudflare Vectorize (optionnel)
 
-### Phase 5 : PWA et déploiement - EN COURS (50%)
+### Phase 5 : PWA et déploiement - TERMINÉE
 - [x] Configuration PWA (manifest.json)
 - [x] Génération des icons PWA (192, 512, apple-touch)
 - [x] Meta tags PWA dans layout
-- [ ] **NEXT →** Déploiement Cloudflare Pages
-- [ ] Migrations D1 en production
+- [x] Déploiement Cloudflare Pages (https://myshelf-d69.pages.dev)
+- [x] Migrations D1 en production
+- [x] Variables d'environnement configurées (TMDB_API_KEY, GEMINI_API_KEY)
+
+### Phase 6 : Tests et qualité - EN COURS
+- [x] Installation Vitest et dépendances de test
+- [x] Configuration vitest.config.ts
+- [x] Mock D1 pour tests unitaires
+- [x] Tests unitaires DB helpers (books, movies, shows, stats, highlights)
+- [x] Tests unitaires API clients (Open Library, TMDB, Gemini)
+- [ ] Tests d'intégration plus avancés (avec miniflare)
+- [ ] Tests E2E (optionnel)
 
 ---
 
@@ -197,6 +207,30 @@ npm run dev
 
 # Dev avec D1 local
 npx wrangler pages dev .next --d1=DB=myshelf-db
+
+# Tests unitaires
+npm test              # Mode watch
+npm run test:run      # Une seule exécution
+npm run test:coverage # Avec couverture de code
+```
+
+## Structure des tests
+
+```
+src/__tests__/
+├── setup.ts              # Configuration globale (mocks env, fetch)
+├── mocks/
+│   └── d1.ts             # Mock D1Database + factories de données
+├── db/
+│   ├── books.test.ts     # Tests helpers livres
+│   ├── movies.test.ts    # Tests helpers films
+│   ├── shows.test.ts     # Tests helpers séries
+│   ├── stats.test.ts     # Tests helpers stats/goals
+│   └── highlights.test.ts # Tests helpers passages favoris
+└── api/
+    ├── openlibrary.test.ts # Tests client Open Library
+    ├── tmdb.test.ts        # Tests client TMDB
+    └── gemini.test.ts      # Tests client Gemini AI
 ```
 
 ---
