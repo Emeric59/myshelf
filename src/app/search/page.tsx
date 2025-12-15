@@ -232,6 +232,7 @@ function SearchContent() {
                               seriesName={result.seriesName}
                               sources={result.sources}
                               inLibrary={result.in_library}
+                              onClick={() => openDetailModal(result)}
                               onAdd={() => openDetailModal(result)}
                               variant="search"
                             />
@@ -258,6 +259,7 @@ function SearchContent() {
                               rating={result.rating}
                               year={result.year}
                               inLibrary={result.in_library}
+                              onClick={() => openDetailModal(result)}
                               onAdd={() => openDetailModal(result)}
                               variant="search"
                             />
@@ -284,6 +286,7 @@ function SearchContent() {
                               rating={result.rating}
                               year={result.year}
                               inLibrary={result.in_library}
+                              onClick={() => openDetailModal(result)}
                               onAdd={() => openDetailModal(result)}
                               variant="search"
                             />
@@ -311,6 +314,7 @@ function SearchContent() {
                         seriesName={result.seriesName}
                         sources={result.sources}
                         inLibrary={result.in_library}
+                        onClick={() => openDetailModal(result)}
                         onAdd={() => openDetailModal(result)}
                         variant="search"
                       />

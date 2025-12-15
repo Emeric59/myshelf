@@ -32,6 +32,7 @@ interface MediaCardProps {
   sources?: string[]
   inLibrary?: boolean
   onAdd?: () => void
+  onClick?: () => void
   onStatusChange?: (status: string) => void
   variant?: "default" | "compact" | "search"
   className?: string
@@ -67,6 +68,7 @@ export function MediaCard({
   sources,
   inLibrary,
   onAdd,
+  onClick,
   variant = "default",
   className,
 }: MediaCardProps) {
@@ -139,9 +141,10 @@ export function MediaCard({
     return (
       <Card
         className={cn(
-          "overflow-hidden hover:border-primary transition-colors",
+          "overflow-hidden hover:border-primary transition-colors cursor-pointer",
           className
         )}
+        onClick={onClick}
       >
         <CardContent className="p-4 flex gap-4">
           {/* Cover */}
