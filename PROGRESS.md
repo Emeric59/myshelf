@@ -4,8 +4,8 @@
 
 ## Statut actuel
 
-**Phase :** Phase 10 - Recherche multi-sources livres (TERMINÉE)
-**Dernière mise à jour :** 2025-12-15 (session 5 - fix Hardcover API)
+**Phase :** Phase 11 - Tracking épisodes séries (TERMINÉE)
+**Dernière mise à jour :** 2025-12-15 (session 6 - episode tracking)
 **Build :** OK
 **Déployé :** https://myshelf-d69.pages.dev
 **État DB prod :** Vraies données avec descriptions en français (10 livres, 10 films, 10 séries)
@@ -130,6 +130,18 @@
 - [x] **Fix tags robuste** : `extractTagStrings()` gère strings ET objets `{tag, tagSlug, ...}`
 - [x] **SearchDetailModal amélioré** : Badges colorés (genres gris, tropes violet, moods vert, warnings orange)
 
+### Phase 11 : Tracking épisodes séries - TERMINÉE
+- [x] **Capitalisation tags** : Première lettre majuscule pour genres, tropes, moods, warnings
+- [x] **Titres recherche** : Affichage sur 2 lignes au lieu de truncate 1 ligne
+- [x] **Fix date doublée** : Films/séries n'affichent plus la date en subtitle ET year
+- [x] **Fix progression séries** : Nouvelles séries à 0% au lieu de 50% erroné
+- [x] **Migration episode tracking** : Tables `show_seasons` et `watched_episodes`
+- [x] **API TMDB saisons** : Fonctions `getSeason()` et `getAllSeasons()` dans tmdb.ts
+- [x] **API /api/episodes** : GET (progression), POST (marquer vu), DELETE (démarquer)
+- [x] **UI tracking épisodes** : Accordéon par saison, liste d'épisodes cliquables
+- [x] **Progression automatique** : Calculée depuis épisodes vus (pas saison courante)
+- [x] **Actions rapides** : "Tout marquer vu" et "Réinitialiser" par saison
+
 ---
 
 ## Migrations D1
@@ -143,6 +155,7 @@
 | `005_add_descriptions.sql` | Descriptions/synopsis (anglais) | ✅ |
 | `006_french_descriptions.sql` | Descriptions traduites en français | ✅ |
 | `007_add_book_enrichment.sql` | Colonnes enrichissement livres (tropes, moods, hardcover_slug, etc.) | ✅ |
+| `008_episode_tracking.sql` | Tables `show_seasons` et `watched_episodes` pour tracking épisodes | ✅ |
 
 > **Note :** La DB contient des données réelles avec descriptions en français, IDs vérifiés via APIs officielles (Open Library + TMDB).
 
@@ -163,6 +176,7 @@
 | `/api/highlights` | GET, POST, PATCH, DELETE | Passages favoris |
 | `/api/recommendations/ask` | POST | Recommandations IA (Gemini 2.5 Flash) |
 | `/api/subscriptions` | GET, POST | Abonnements streaming |
+| `/api/episodes` | GET, POST, DELETE | Tracking épisodes séries (style TV Time) |
 
 ---
 
