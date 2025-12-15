@@ -43,12 +43,36 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ preferences, counts })
     }
 
-    // Get all tropes (optionally filtered by category)
-    const [tropes, preferences, counts] = await Promise.all([
-      category ? getTropesByCategory(env.DB, category) : getAllTropes(env.DB),
-      getUserTropePreferences(env.DB),
-      countTropesByPreference(env.DB),
-    ])
+    // Get all tropes first
+    let tropes: Awaited<ReturnType<typeof getAllTropes>> = []
+    try {
+      tropes = category ? await getTropesByCategory(env.DB, category) : await getAllTropes(env.DB)
+    } catch (tropeError) {
+      console.error("Error getting tropes:", tropeError)
+      return NextResponse.json({
+        tropes: [],
+        counts: { love: 0, like: 0, neutral: 0, dislike: 0, blacklist: 0 },
+        error: `Tropes error: ${tropeError instanceof Error ? tropeError.message : "Unknown"}`,
+      })
+    }
+
+    // Get preferences
+    let preferences: Awaited<ReturnType<typeof getUserTropePreferences>> = []
+    try {
+      preferences = await getUserTropePreferences(env.DB)
+    } catch (prefError) {
+      console.error("Error getting preferences:", prefError)
+      // Continue without preferences
+    }
+
+    // Get counts
+    let counts = { love: 0, like: 0, neutral: 0, dislike: 0, blacklist: 0 }
+    try {
+      counts = await countTropesByPreference(env.DB)
+    } catch (countError) {
+      console.error("Error getting counts:", countError)
+      // Continue without counts
+    }
 
     // Create a map of preferences for easy lookup
     const preferencesMap = new Map(
