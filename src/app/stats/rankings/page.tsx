@@ -48,15 +48,25 @@ export default function RankingsPage() {
         cover_url?: string
         poster_url?: string
         rating?: number
+        updated_at?: string
+        finished_at?: string
+        watched_at?: string
       }
 
       const data = await response.json() as Record<string, MediaItem[]>
       const items = data[cat] || data.books || data.movies || data.shows || []
 
-      // Filter items with ratings and sort by rating
+      // Filter items with ratings and sort by rating (then by date for ties)
       const ranked: RankedMedia[] = items
         .filter((item) => item.rating && item.rating > 0)
-        .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+        .sort((a, b) => {
+          const ratingDiff = (b.rating || 0) - (a.rating || 0)
+          if (ratingDiff !== 0) return ratingDiff
+          // En cas d'égalité, trier par date (plus récent en premier)
+          const dateA = a.finished_at || a.watched_at || a.updated_at || ""
+          const dateB = b.finished_at || b.watched_at || b.updated_at || ""
+          return dateB.localeCompare(dateA)
+        })
         .slice(0, 10)
         .map((item) => ({
           id: item.id || item.book_id || item.movie_id || item.show_id || "",
