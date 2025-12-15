@@ -74,8 +74,8 @@ export default function RankingsPage() {
         expanded: rating >= 4, // Expand 5 and 4 stars by default
       }))
 
-      // Filter out empty groups
-      setRatingGroups(groups.filter(g => g.items.length > 0))
+      // Show all groups (even empty ones) so users can see all rating levels
+      setRatingGroups(groups)
     } catch (error) {
       console.error("Error fetching rankings:", error)
       setRatingGroups([])
@@ -206,40 +206,46 @@ export default function RankingsPage() {
 
                 {/* Group Items */}
                 {group.expanded && (
-                  <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                    {group.items.map((item) => (
-                      <Link key={item.id} href={getDetailUrl(item)}>
-                        <div className="group relative">
-                          {/* Poster */}
-                          <div className="aspect-[2/3] rounded-lg overflow-hidden bg-muted">
-                            {item.posterUrl ? (
-                              <Image
-                                src={item.posterUrl}
-                                alt={item.title}
-                                width={120}
-                                height={180}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                {category === "books" ? (
-                                  <Book className="h-8 w-8 text-muted-foreground" />
-                                ) : category === "movies" ? (
-                                  <Film className="h-8 w-8 text-muted-foreground" />
-                                ) : (
-                                  <Tv className="h-8 w-8 text-muted-foreground" />
-                                )}
-                              </div>
-                            )}
+                  group.items.length > 0 ? (
+                    <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                      {group.items.map((item) => (
+                        <Link key={item.id} href={getDetailUrl(item)}>
+                          <div className="group relative">
+                            {/* Poster */}
+                            <div className="aspect-[2/3] rounded-lg overflow-hidden bg-muted">
+                              {item.posterUrl ? (
+                                <Image
+                                  src={item.posterUrl}
+                                  alt={item.title}
+                                  width={120}
+                                  height={180}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  {category === "books" ? (
+                                    <Book className="h-8 w-8 text-muted-foreground" />
+                                  ) : category === "movies" ? (
+                                    <Film className="h-8 w-8 text-muted-foreground" />
+                                  ) : (
+                                    <Tv className="h-8 w-8 text-muted-foreground" />
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            {/* Title */}
+                            <p className="mt-1 text-xs font-medium line-clamp-2 group-hover:text-primary transition-colors">
+                              {item.title}
+                            </p>
                           </div>
-                          {/* Title */}
-                          <p className="mt-1 text-xs font-medium line-clamp-2 group-hover:text-primary transition-colors">
-                            {item.title}
-                          </p>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm text-muted-foreground italic pl-3">
+                      Aucun élément dans cette catégorie
+                    </p>
+                  )
                 )}
               </div>
             ))}
