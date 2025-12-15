@@ -45,7 +45,6 @@ interface HardcoverBookRaw {
   cached_tags?: HardcoverCachedTags
   rating?: number
   ratings_count?: number
-  series?: HardcoverSeries
 }
 
 // Search results format (from Typesense via search endpoint)
@@ -188,11 +187,6 @@ export async function getHardcoverBookDetails(slug: string): Promise<HardcoverBo
         cached_contributors
         cached_tags
         rating
-        series {
-          name
-          slug
-          books_count
-        }
       }
     }
   `
@@ -268,7 +262,8 @@ function parseHardcoverBook(book: HardcoverBookRaw): HardcoverBookResult {
     tropes: tags.Trope?.slice(0, 8) || [],
     moods: tags.Mood?.slice(0, 5) || [],
     contentWarnings: tags["Content Warning"]?.slice(0, 6) || [],
-    seriesName: book.series?.name,
+    // Series info not available from books query - use search results instead
+    seriesName: undefined,
   }
 }
 
