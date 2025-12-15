@@ -45,9 +45,10 @@ export async function getUserTropePreferences(
         utp.preference,
         t.id,
         t.name,
-        t.name_fr,
+        t.slug,
         t.category,
-        t.description
+        t.description,
+        t.is_sensitive
       FROM user_trope_preferences utp
       JOIN tropes t ON utp.trope_id = t.id
       ORDER BY t.category, t.name
