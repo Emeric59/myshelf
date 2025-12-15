@@ -1,5 +1,5 @@
 /**
- * Unit tests for src/lib/api/openlibrary.ts
+ * Unit tests for src/lib/api/openLibrary.ts
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
@@ -11,7 +11,7 @@ import {
   extractDescription,
   normalizeSearchResult,
   type OpenLibrarySearchResult,
-} from '@/lib/api/openlibrary'
+} from '@/lib/api/openLibrary'
 
 // Mock fetch responses
 const mockSearchResponse = {

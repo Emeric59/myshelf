@@ -73,7 +73,7 @@ export default function MovieDetailPage({ params }: { params: Promise<{ id: stri
     try {
       const res = await fetch(`/api/movies?id=${id}`)
       if (res.ok) {
-        const data = await res.json()
+        const data = await res.json() as (UserMovie & Movie) | null
         setMovie(data)
       }
     } catch (error) {
@@ -87,7 +87,7 @@ export default function MovieDetailPage({ params }: { params: Promise<{ id: stri
     try {
       const res = await fetch(`/api/reviews?mediaType=movie&mediaId=${id}`)
       if (res.ok) {
-        const data = await res.json()
+        const data = await res.json() as { comment?: string; liked_aspects?: string; emotions?: string } | null
         if (data) {
           setReview({
             comment: data.comment || "",
@@ -315,7 +315,7 @@ export default function MovieDetailPage({ params }: { params: Promise<{ id: stri
             <Label className="text-sm font-medium mb-3 block">Note</Label>
             <RatingStars
               rating={movie.rating || 0}
-              editable
+              interactive
               size="lg"
               onChange={handleRatingChange}
             />

@@ -101,7 +101,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
     try {
       const res = await fetch(`/api/books?id=${id}`)
       if (res.ok) {
-        const data = await res.json()
+        const data = await res.json() as (UserBook & Book) | null
         setBook(data)
       }
     } catch (error) {
@@ -115,7 +115,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
     try {
       const res = await fetch(`/api/reviews?mediaType=book&mediaId=${id}`)
       if (res.ok) {
-        const data = await res.json()
+        const data = await res.json() as { comment?: string; liked_aspects?: string; emotions?: string } | null
         if (data) {
           setReview({
             comment: data.comment || "",
@@ -133,7 +133,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
     try {
       const res = await fetch(`/api/highlights?bookId=${id}`)
       if (res.ok) {
-        const data = await res.json()
+        const data = await res.json() as Array<{ id: number; content: string; page_number?: number; chapter?: string; personal_note?: string }>
         setHighlights(data || [])
       }
     } catch (error) {
@@ -229,7 +229,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
         }),
       })
       if (res.ok) {
-        const data = await res.json()
+        const data = await res.json() as { id: number; content: string; page_number?: number; chapter?: string; personal_note?: string }
         setHighlights([data, ...highlights])
         setNewHighlight({ content: "", page_number: "", chapter: "", personal_note: "" })
         setHighlightDialogOpen(false)
@@ -407,7 +407,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
             <Label className="text-sm font-medium mb-3 block">Note</Label>
             <RatingStars
               rating={book.rating || 0}
-              editable
+              interactive
               size="lg"
               onChange={handleRatingChange}
             />

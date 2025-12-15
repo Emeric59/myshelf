@@ -78,7 +78,7 @@ export default function ShowDetailPage({ params }: { params: Promise<{ id: strin
     try {
       const res = await fetch(`/api/shows?id=${id}`)
       if (res.ok) {
-        const data = await res.json()
+        const data = await res.json() as (UserShow & Show) | null
         setShow(data)
       }
     } catch (error) {
@@ -92,7 +92,7 @@ export default function ShowDetailPage({ params }: { params: Promise<{ id: strin
     try {
       const res = await fetch(`/api/reviews?mediaType=show&mediaId=${id}`)
       if (res.ok) {
-        const data = await res.json()
+        const data = await res.json() as { comment?: string; liked_aspects?: string; emotions?: string } | null
         if (data) {
           setReview({
             comment: data.comment || "",
@@ -228,8 +228,8 @@ export default function ShowDetailPage({ params }: { params: Promise<{ id: strin
   }
 
   const genres = show.genres ? (typeof show.genres === 'string' ? JSON.parse(show.genres) : show.genres) : []
-  const totalSeasons = show.total_seasons || show.seasons_count || 0
-  const totalEpisodes = show.total_episodes || show.episodes_count || 0
+  const totalSeasons = show.total_seasons || 0
+  const totalEpisodes = show.total_episodes || 0
 
   // Calculate progress
   const progress = totalEpisodes > 0 && show.current_episode
@@ -304,7 +304,6 @@ export default function ShowDetailPage({ params }: { params: Promise<{ id: strin
               <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4" />
                 {show.first_air_date.split("-")[0]}
-                {show.show_status && <Badge variant="outline" className="ml-2 text-xs">{show.show_status}</Badge>}
               </div>
             )}
           </div>
@@ -381,7 +380,7 @@ export default function ShowDetailPage({ params }: { params: Promise<{ id: strin
             <Label className="text-sm font-medium mb-3 block">Note</Label>
             <RatingStars
               rating={show.rating || 0}
-              editable
+              interactive
               size="lg"
               onChange={handleRatingChange}
             />
