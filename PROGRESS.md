@@ -316,3 +316,8 @@ GEMINI_API_KEY=xxx
 12. **Hook useTropes** : Simplification (préférences déjà fusionnées par API)
 13. **Navigation Biblio** : Pointe vers `/library` au lieu de `/books`
 14. **Page d'accueil** : Utilise maintenant le composant BottomNav partagé
+15. **Tropes SQL** : Colonne `name_fr` inexistante retirée de la requête
+16. **Images non chargées** : Ajout `unoptimized: true` dans next.config.ts (Cloudflare Pages)
+17. **Rankings 404** : IDs de navigation corrigés (`book_id` au lieu de `id` row)
+18. **Mood recommendations** : Paramètre API corrigé (`query` au lieu de `message`)
+19. **Ajout depuis recommandations** : Type de recherche corrigé (singulier au lieu de pluriel)
