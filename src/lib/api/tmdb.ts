@@ -59,6 +59,29 @@ export interface TMDBCredits {
   }[]
 }
 
+export interface TMDBEpisode {
+  id: number
+  name: string
+  overview: string
+  episode_number: number
+  season_number: number
+  air_date: string | null
+  still_path: string | null
+  runtime: number | null
+  vote_average: number
+}
+
+export interface TMDBSeason {
+  id: number
+  name: string
+  overview: string
+  season_number: number
+  air_date: string | null
+  poster_path: string | null
+  episode_count: number
+  episodes?: TMDBEpisode[]
+}
+
 export interface TMDBWatchProviders {
   results?: {
     FR?: {
@@ -154,10 +177,35 @@ export async function getMovie(
  */
 export async function getShow(
   id: number | string
-): Promise<TMDBShow & { credits: TMDBCredits; "watch/providers": TMDBWatchProviders }> {
+): Promise<TMDBShow & { credits: TMDBCredits; "watch/providers": TMDBWatchProviders; seasons?: TMDBSeason[] }> {
   return tmdbFetch(`/tv/${id}`, {
     append_to_response: "credits,watch/providers",
   })
+}
+
+/**
+ * Get season details with episodes
+ */
+export async function getSeason(
+  showId: number | string,
+  seasonNumber: number
+): Promise<TMDBSeason> {
+  return tmdbFetch(`/tv/${showId}/season/${seasonNumber}`)
+}
+
+/**
+ * Get all seasons details for a show
+ */
+export async function getAllSeasons(
+  showId: number | string,
+  seasonsCount: number
+): Promise<TMDBSeason[]> {
+  // Fetch all seasons in parallel (skip season 0 which is usually specials)
+  const seasonPromises: Promise<TMDBSeason>[] = []
+  for (let i = 1; i <= seasonsCount; i++) {
+    seasonPromises.push(getSeason(showId, i))
+  }
+  return Promise.all(seasonPromises)
 }
 
 /**

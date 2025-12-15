@@ -125,27 +125,37 @@ export default function ShowsPage() {
                 : "space-y-3"
             )}
           >
-            {filteredShows.map((show) => (
-              <MediaCard
-                key={show.show_id}
-                id={show.show_id}
-                type="show"
-                title={show.title}
-                imageUrl={show.poster_url}
-                status={show.status}
-                userRating={show.rating}
-                year={show.first_air_date?.slice(0, 4)}
-                progress={
-                  show.current_season && show.total_seasons
-                    ? {
-                        current: show.current_season,
-                        total: show.total_seasons,
-                      }
-                    : undefined
-                }
-                variant={viewMode === "list" ? "compact" : "default"}
-              />
-            ))}
+            {filteredShows.map((show) => {
+              // Only show progress for shows being watched and with actual progress
+              const hasProgress =
+                show.status === "watching" &&
+                show.current_episode &&
+                show.current_episode > 0 &&
+                show.total_episodes &&
+                show.total_episodes > 0
+
+              return (
+                <MediaCard
+                  key={show.show_id}
+                  id={show.show_id}
+                  type="show"
+                  title={show.title}
+                  imageUrl={show.poster_url}
+                  status={show.status}
+                  userRating={show.rating}
+                  year={show.first_air_date?.slice(0, 4)}
+                  progress={
+                    hasProgress
+                      ? {
+                          current: show.current_episode!,
+                          total: show.total_episodes!,
+                        }
+                      : undefined
+                  }
+                  variant={viewMode === "list" ? "compact" : "default"}
+                />
+              )
+            })}
           </div>
         ) : (
           <div className="text-center py-12">

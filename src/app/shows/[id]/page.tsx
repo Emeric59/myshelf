@@ -12,8 +12,11 @@ import {
   Trash2,
   MessageSquare,
   Loader2,
-  Play,
-  Pause,
+  ChevronDown,
+  ChevronUp,
+  Check,
+  Circle,
+  CheckCircle2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -22,7 +25,6 @@ import { Progress } from "@/components/ui/progress"
 import { Textarea } from "@/components/ui/textarea"
 import { RatingStars } from "@/components/media"
 import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
 import type { Show, UserShow, ShowStatus } from "@/types"
 
 const statusOptions: { value: ShowStatus; label: string }[] = [
@@ -60,6 +62,30 @@ const emotionOptions = [
   { id: "bingeworthy", label: "Impossible à arrêter", emoji: "📺" },
 ]
 
+interface Episode {
+  id: number
+  name: string
+  overview: string
+  episode_number: number
+  season_number: number
+  air_date: string | null
+  runtime: number | null
+  watched: boolean
+}
+
+interface SeasonData {
+  season_number: number
+  name: string
+  episode_count: number
+  episodes?: Episode[]
+}
+
+interface EpisodeProgress {
+  watchedBySeason: Record<number, number>
+  totalWatched: number
+  cachedSeasons: Array<{ season_number: number; episode_count: number }>
+}
+
 export default function ShowDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const [show, setShow] = useState<(UserShow & Show) | null>(null)
@@ -71,9 +97,16 @@ export default function ShowDetailPage({ params }: { params: Promise<{ id: strin
     emotions: string[]
   }>({ comment: "", liked: [], emotions: [] })
 
+  // Episode tracking state
+  const [episodeProgress, setEpisodeProgress] = useState<EpisodeProgress | null>(null)
+  const [expandedSeason, setExpandedSeason] = useState<number | null>(null)
+  const [seasonData, setSeasonData] = useState<SeasonData | null>(null)
+  const [loadingSeason, setLoadingSeason] = useState(false)
+
   useEffect(() => {
     fetchShow()
     fetchReview()
+    fetchEpisodeProgress()
   }, [id])
 
   const fetchShow = async () => {
@@ -108,6 +141,103 @@ export default function ShowDetailPage({ params }: { params: Promise<{ id: strin
     }
   }
 
+  const fetchEpisodeProgress = async () => {
+    try {
+      const res = await fetch(`/api/episodes?showId=${id}`)
+      if (res.ok) {
+        const data = await res.json() as EpisodeProgress
+        setEpisodeProgress(data)
+      }
+    } catch (error) {
+      console.error("Error fetching episode progress:", error)
+    }
+  }
+
+  const fetchSeasonDetails = async (seasonNumber: number) => {
+    setLoadingSeason(true)
+    try {
+      const res = await fetch(`/api/episodes?showId=${id}&season=${seasonNumber}`)
+      if (res.ok) {
+        const data = await res.json() as { season: SeasonData }
+        setSeasonData(data.season)
+      }
+    } catch (error) {
+      console.error("Error fetching season:", error)
+    } finally {
+      setLoadingSeason(false)
+    }
+  }
+
+  const toggleSeason = (seasonNumber: number) => {
+    if (expandedSeason === seasonNumber) {
+      setExpandedSeason(null)
+      setSeasonData(null)
+    } else {
+      setExpandedSeason(seasonNumber)
+      fetchSeasonDetails(seasonNumber)
+    }
+  }
+
+  const markEpisodeWatched = async (seasonNumber: number, episodeNumber: number, watched: boolean) => {
+    try {
+      if (watched) {
+        await fetch("/api/episodes", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ showId: id, seasonNumber, episodeNumber }),
+        })
+      } else {
+        await fetch("/api/episodes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ showId: id, seasonNumber, episodeNumber }),
+        })
+      }
+      // Refresh data
+      fetchEpisodeProgress()
+      if (expandedSeason === seasonNumber) {
+        fetchSeasonDetails(seasonNumber)
+      }
+      fetchShow() // Update current_episode in show
+    } catch (error) {
+      console.error("Error updating episode:", error)
+    }
+  }
+
+  const markSeasonWatched = async (seasonNumber: number, episodeCount: number) => {
+    try {
+      await fetch("/api/episodes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ showId: id, seasonNumber, upToEpisode: episodeCount }),
+      })
+      fetchEpisodeProgress()
+      if (expandedSeason === seasonNumber) {
+        fetchSeasonDetails(seasonNumber)
+      }
+      fetchShow()
+    } catch (error) {
+      console.error("Error marking season watched:", error)
+    }
+  }
+
+  const clearSeasonProgress = async (seasonNumber: number) => {
+    try {
+      await fetch("/api/episodes", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ showId: id, seasonNumber }),
+      })
+      fetchEpisodeProgress()
+      if (expandedSeason === seasonNumber) {
+        fetchSeasonDetails(seasonNumber)
+      }
+      fetchShow()
+    } catch (error) {
+      console.error("Error clearing season:", error)
+    }
+  }
+
   const handleStatusChange = async (status: ShowStatus) => {
     if (!show) return
     setSaving(true)
@@ -137,23 +267,6 @@ export default function ShowDetailPage({ params }: { params: Promise<{ id: strin
       setShow({ ...show, rating })
     } catch (error) {
       console.error("Error updating rating:", error)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleProgressChange = async (season: number, episode: number) => {
-    if (!show) return
-    setSaving(true)
-    try {
-      await fetch("/api/shows", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, current_season: season, current_episode: episode }),
-      })
-      setShow({ ...show, current_season: season, current_episode: episode })
-    } catch (error) {
-      console.error("Error updating progress:", error)
     } finally {
       setSaving(false)
     }
@@ -233,10 +346,9 @@ export default function ShowDetailPage({ params }: { params: Promise<{ id: strin
   const totalSeasons = show.total_seasons || 0
   const totalEpisodes = show.total_episodes || 0
 
-  // Calculate progress
-  const progress = totalEpisodes > 0 && show.current_episode
-    ? Math.round(((show.current_season - 1) * (totalEpisodes / totalSeasons) + show.current_episode) / totalEpisodes * 100)
-    : 0
+  // Calculate progress from watched episodes
+  const totalWatched = episodeProgress?.totalWatched || 0
+  const progress = totalEpisodes > 0 ? Math.round((totalWatched / totalEpisodes) * 100) : 0
 
   return (
     <div className="min-h-screen bg-background pb-8">
@@ -340,37 +452,135 @@ export default function ShowDetailPage({ params }: { params: Promise<{ id: strin
           </CardContent>
         </Card>
 
-        {/* Progress (for watching status) */}
-        {show.status === "watching" && totalSeasons > 0 && (
+        {/* Episode Tracking */}
+        {totalSeasons > 0 && (
           <Card className="mt-4">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <Label className="text-sm font-medium">Progression</Label>
-                <span className="text-sm text-muted-foreground">{progress}%</span>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Tv className="h-5 w-5 text-primary" />
+                  Progression
+                </CardTitle>
+                <span className="text-sm text-muted-foreground">
+                  {totalWatched}/{totalEpisodes} épisodes ({progress}%)
+                </span>
               </div>
-              <Progress value={progress} className="mb-3" />
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <Label className="text-sm">Saison</Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={totalSeasons}
-                    value={show.current_season || 1}
-                    onChange={(e) => handleProgressChange(parseInt(e.target.value) || 1, show.current_episode || 0)}
-                    className="w-16"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Label className="text-sm">Épisode</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={show.current_episode || 0}
-                    onChange={(e) => handleProgressChange(show.current_season || 1, parseInt(e.target.value) || 0)}
-                    className="w-16"
-                  />
-                </div>
+              <Progress value={progress} className="mt-2" />
+            </CardHeader>
+            <CardContent className="pt-2">
+              <div className="space-y-2">
+                {Array.from({ length: totalSeasons }, (_, i) => i + 1).map((seasonNum) => {
+                  const watchedInSeason = episodeProgress?.watchedBySeason[seasonNum] || 0
+                  const cachedSeason = episodeProgress?.cachedSeasons?.find(s => s.season_number === seasonNum)
+                  const episodeCount = cachedSeason?.episode_count || Math.ceil(totalEpisodes / totalSeasons)
+                  const isComplete = watchedInSeason >= episodeCount && episodeCount > 0
+                  const isExpanded = expandedSeason === seasonNum
+
+                  return (
+                    <div key={seasonNum} className="border rounded-lg overflow-hidden">
+                      {/* Season header */}
+                      <button
+                        onClick={() => toggleSeason(seasonNum)}
+                        className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          {isComplete ? (
+                            <CheckCircle2 className="h-5 w-5 text-green-500" />
+                          ) : watchedInSeason > 0 ? (
+                            <div className="relative">
+                              <Circle className="h-5 w-5 text-primary" />
+                              <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-primary">
+                                {watchedInSeason}
+                              </div>
+                            </div>
+                          ) : (
+                            <Circle className="h-5 w-5 text-muted-foreground" />
+                          )}
+                          <span className="font-medium">Saison {seasonNum}</span>
+                          <span className="text-sm text-muted-foreground">
+                            {watchedInSeason}/{episodeCount} épisodes
+                          </span>
+                        </div>
+                        {isExpanded ? (
+                          <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                        ) : (
+                          <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                        )}
+                      </button>
+
+                      {/* Season details */}
+                      {isExpanded && (
+                        <div className="border-t bg-muted/30">
+                          {/* Quick actions */}
+                          <div className="flex gap-2 p-3 border-b">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => markSeasonWatched(seasonNum, episodeCount)}
+                              disabled={isComplete}
+                            >
+                              <Check className="h-4 w-4 mr-1" />
+                              Tout marquer vu
+                            </Button>
+                            {watchedInSeason > 0 && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => clearSeasonProgress(seasonNum)}
+                              >
+                                Réinitialiser
+                              </Button>
+                            )}
+                          </div>
+
+                          {/* Episodes list */}
+                          {loadingSeason ? (
+                            <div className="flex items-center justify-center py-8">
+                              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                            </div>
+                          ) : seasonData?.episodes ? (
+                            <div className="divide-y">
+                              {seasonData.episodes.map((episode) => (
+                                <button
+                                  key={episode.episode_number}
+                                  onClick={() => markEpisodeWatched(seasonNum, episode.episode_number, episode.watched)}
+                                  className="w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors text-left"
+                                >
+                                  {episode.watched ? (
+                                    <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+                                  ) : (
+                                    <Circle className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                                  )}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm font-medium">
+                                        {episode.episode_number}. {episode.name}
+                                      </span>
+                                      {episode.runtime && (
+                                        <span className="text-xs text-muted-foreground">
+                                          {episode.runtime} min
+                                        </span>
+                                      )}
+                                    </div>
+                                    {episode.air_date && (
+                                      <span className="text-xs text-muted-foreground">
+                                        {new Date(episode.air_date).toLocaleDateString('fr-FR')}
+                                      </span>
+                                    )}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="p-4 text-center text-muted-foreground">
+                              Impossible de charger les épisodes
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             </CardContent>
           </Card>

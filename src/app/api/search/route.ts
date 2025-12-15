@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
               type: "movie" as const,
               id: movie.id.toString(),
               title: movie.title,
-              subtitle: movie.release_date?.slice(0, 4),
+              subtitle: undefined, // Don't duplicate year as subtitle
               image_url: getImageUrl(movie.poster_path, "w185"),
               year: movie.release_date?.slice(0, 4),
               rating: movie.vote_average,
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
               type: "show" as const,
               id: show.id.toString(),
               title: show.name,
-              subtitle: show.first_air_date?.slice(0, 4),
+              subtitle: undefined, // Don't duplicate year as subtitle
               image_url: getImageUrl(show.poster_path, "w185"),
               year: show.first_air_date?.slice(0, 4),
               rating: show.vote_average,
