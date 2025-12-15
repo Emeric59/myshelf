@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import {
-  searchBooks,
-  normalizeSearchResult,
+  searchBooksMultiSource,
   searchMovies,
   searchShows,
   getImageUrl,
@@ -29,23 +28,27 @@ export async function GET(request: NextRequest) {
     // Search based on type filter
     const searchPromises: Promise<void>[] = []
 
-    // Books
+    // Books - using multi-source orchestrator
     if (!type || type === "book") {
       searchPromises.push(
-        searchBooks(query, { limit: 10 })
-          .then((data) => {
-            const bookResults: SearchResult[] = data.docs.map((doc) => {
-              const normalized = normalizeSearchResult(doc)
-              return {
-                type: "book" as const,
-                id: normalized.id,
-                title: normalized.title,
-                subtitle: normalized.author,
-                image_url: normalized.cover_url,
-                year: normalized.published_date,
-                rating: undefined, // Open Library doesn't provide ratings in search
-              }
-            })
+        searchBooksMultiSource(query)
+          .then((books) => {
+            const bookResults: SearchResult[] = books.slice(0, 15).map((book) => ({
+              type: "book" as const,
+              id: book.id,
+              title: book.title,
+              subtitle: book.authors.join(", ") || undefined,
+              image_url: book.coverUrl,
+              year: book.publishedDate?.slice(0, 4),
+              rating: undefined,
+              // Enrichment data from Hardcover
+              genres: book.genres,
+              tropes: book.tropes,
+              moods: book.moods,
+              contentWarnings: book.contentWarnings,
+              seriesName: book.seriesName,
+              sources: book.sources,
+            }))
             results.push(...bookResults)
           })
           .catch((err) => {

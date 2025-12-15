@@ -26,6 +26,10 @@ interface MediaCardProps {
   }
   year?: string
   genres?: string[]
+  tropes?: string[]
+  moods?: string[]
+  seriesName?: string
+  sources?: string[]
   inLibrary?: boolean
   onAdd?: () => void
   onStatusChange?: (status: string) => void
@@ -57,6 +61,10 @@ export function MediaCard({
   progress,
   year,
   genres,
+  tropes,
+  moods,
+  seriesName,
+  sources,
   inLibrary,
   onAdd,
   variant = "default",
@@ -124,6 +132,10 @@ export function MediaCard({
   }
 
   if (variant === "search") {
+    // Combine tropes and moods for display (limit to 4 total)
+    const tags = [...(tropes || []), ...(moods || [])].slice(0, 4)
+    const hasEnrichment = tags.length > 0
+
     return (
       <Card
         className={cn(
@@ -167,12 +179,39 @@ export function MediaCard({
               {year && (
                 <span className="text-xs text-muted-foreground">{year}</span>
               )}
+              {seriesName && (
+                <span className="text-xs text-primary font-medium truncate">
+                  {seriesName}
+                </span>
+              )}
               {rating && <RatingStars rating={rating / 2} size="sm" />}
             </div>
 
-            {genres && genres.length > 0 && (
+            {/* Tropes & Moods tags */}
+            {hasEnrichment && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {tags.map((tag, index) => (
+                  <span
+                    key={`${tag}-${index}`}
+                    className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Genres fallback if no tropes/moods */}
+            {!hasEnrichment && genres && genres.length > 0 && (
               <p className="text-xs text-muted-foreground mt-1 truncate">
                 {genres.slice(0, 3).join(" • ")}
+              </p>
+            )}
+
+            {/* Sources indicator */}
+            {sources && sources.length > 1 && (
+              <p className="text-[10px] text-muted-foreground/60 mt-1">
+                {sources.length} sources
               </p>
             )}
           </div>

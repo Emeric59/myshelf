@@ -185,6 +185,11 @@ function SearchContent() {
                               imageUrl={result.image_url}
                               rating={result.rating}
                               year={result.year}
+                              genres={result.genres}
+                              tropes={result.tropes}
+                              moods={result.moods}
+                              seriesName={result.seriesName}
+                              sources={result.sources}
                               inLibrary={result.in_library}
                               onAdd={() => handleAddToLibrary(result)}
                               variant="search"
@@ -259,6 +264,11 @@ function SearchContent() {
                         imageUrl={result.image_url}
                         rating={result.rating}
                         year={result.year}
+                        genres={result.genres}
+                        tropes={result.tropes}
+                        moods={result.moods}
+                        seriesName={result.seriesName}
+                        sources={result.sources}
                         inLibrary={result.in_library}
                         onAdd={() => handleAddToLibrary(result)}
                         variant="search"

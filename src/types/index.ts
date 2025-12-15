@@ -246,6 +246,13 @@ export interface SearchResult {
   rating?: number
   in_library?: boolean
   library_status?: BookStatus | MovieStatus | ShowStatus
+  // Book-specific enrichment data
+  genres?: string[]
+  tropes?: string[]
+  moods?: string[]
+  contentWarnings?: string[]
+  seriesName?: string
+  sources?: string[]
 }
 
 // Stats
