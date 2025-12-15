@@ -76,6 +76,7 @@ export async function GET(request: NextRequest) {
         dislike: 0,
         blacklist: 0,
       },
+      error: error instanceof Error ? error.message : "Unknown error",
     })
   }
 }
