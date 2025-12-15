@@ -158,6 +158,24 @@ export async function updateShowProgress(
     .run()
 }
 
+// Mettre à jour la note d'une série
+export async function updateShowRating(
+  db: D1Database,
+  showId: string,
+  rating: number
+): Promise<void> {
+  const now = new Date().toISOString()
+
+  await db
+    .prepare(`
+      UPDATE user_shows
+      SET rating = ?, updated_at = ?
+      WHERE show_id = ?
+    `)
+    .bind(rating, now, showId)
+    .run()
+}
+
 // Supprimer une série de la bibliothèque
 export async function removeShowFromLibrary(
   db: D1Database,

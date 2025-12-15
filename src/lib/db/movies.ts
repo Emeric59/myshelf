@@ -131,6 +131,24 @@ export async function updateMovieStatus(
     .run()
 }
 
+// Mettre à jour la note d'un film
+export async function updateMovieRating(
+  db: D1Database,
+  movieId: string,
+  rating: number
+): Promise<void> {
+  const now = new Date().toISOString()
+
+  await db
+    .prepare(`
+      UPDATE user_movies
+      SET rating = ?, updated_at = ?
+      WHERE movie_id = ?
+    `)
+    .bind(rating, now, movieId)
+    .run()
+}
+
 // Supprimer un film de la bibliothèque
 export async function removeMovieFromLibrary(
   db: D1Database,

@@ -12,10 +12,10 @@ const navItems = [
     icon: Home,
   },
   {
-    href: "/books",
+    href: "/library",
     label: "Biblio",
     icon: Book,
-    matchPaths: ["/books", "/movies", "/shows"],
+    matchPaths: ["/library", "/books", "/movies", "/shows"],
   },
   {
     href: "/recommendations",

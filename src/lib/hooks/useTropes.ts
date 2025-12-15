@@ -30,20 +30,11 @@ export function useTropes(): UseTropes {
       if (!response.ok) throw new Error("Failed to fetch tropes")
 
       const data = await response.json() as {
-        tropes?: Trope[]
-        preferences?: Array<{ trope_id: number; preference: TropePreference }>
+        tropes?: TropeWithPreference[]
       }
 
-      // Merge tropes with preferences
-      const tropesWithPrefs: TropeWithPreference[] = (data.tropes || []).map((trope: Trope) => {
-        const pref = data.preferences?.find((p) => p.trope_id === trope.id)
-        return {
-          ...trope,
-          preference: pref?.preference || "neutral",
-        }
-      })
-
-      setTropes(tropesWithPrefs)
+      // L'API retourne les tropes avec les préférences déjà fusionnées
+      setTropes(data.tropes || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error")
       setTropes([])

@@ -3,10 +3,12 @@ import { getRequestContext } from "@cloudflare/next-on-pages"
 import { getShow, normalizeShow } from "@/lib/api"
 import {
   getUserShows,
+  getUserShow,
   cacheShow,
   addShowToLibrary,
   updateShowStatus,
   updateShowProgress,
+  updateShowRating,
   removeShowFromLibrary,
   countShowsByStatus,
 } from "@/lib/db"
@@ -15,12 +17,19 @@ import type { ShowStatus, Show } from "@/types"
 // Runtime edge for Cloudflare
 export const runtime = "edge"
 
-// GET /api/shows - List user's shows
+// GET /api/shows - List user's shows or get single show
 export async function GET(request: NextRequest) {
   try {
     const { env } = getRequestContext()
     const { searchParams } = new URL(request.url)
+    const id = searchParams.get("id")
     const status = searchParams.get("status") as ShowStatus | null
+
+    // If ID is provided, return single show
+    if (id) {
+      const show = await getUserShow(env.DB, id)
+      return NextResponse.json(show)
+    }
 
     const [shows, counts] = await Promise.all([
       getUserShows(env.DB),
@@ -117,16 +126,17 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PATCH /api/shows - Update show status or progress
+// PATCH /api/shows - Update show status, progress, or rating
 export async function PATCH(request: NextRequest) {
   try {
     const { env } = getRequestContext()
     const body = await request.json()
-    const { id, status, currentSeason, currentEpisode } = body as {
+    const { id, status, rating, current_season, current_episode } = body as {
       id: string
       status?: ShowStatus
-      currentSeason?: number
-      currentEpisode?: number
+      rating?: number
+      current_season?: number
+      current_episode?: number
     }
 
     if (!id) {
@@ -141,17 +151,23 @@ export async function PATCH(request: NextRequest) {
       await updateShowStatus(env.DB, id, status)
     }
 
+    // Update rating if provided
+    if (rating !== undefined) {
+      await updateShowRating(env.DB, id, rating)
+    }
+
     // Update progress if provided
-    if (currentSeason !== undefined && currentEpisode !== undefined) {
-      await updateShowProgress(env.DB, id, currentSeason, currentEpisode)
+    if (current_season !== undefined && current_episode !== undefined) {
+      await updateShowProgress(env.DB, id, current_season, current_episode)
     }
 
     return NextResponse.json({
       success: true,
       id,
       status,
-      currentSeason,
-      currentEpisode,
+      rating,
+      current_season,
+      current_episode,
     })
   } catch (error) {
     console.error("Error updating show:", error)

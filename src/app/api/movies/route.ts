@@ -3,9 +3,11 @@ import { getRequestContext } from "@cloudflare/next-on-pages"
 import { getMovie, normalizeMovie } from "@/lib/api"
 import {
   getUserMovies,
+  getUserMovie,
   cacheMovie,
   addMovieToLibrary,
   updateMovieStatus,
+  updateMovieRating,
   removeMovieFromLibrary,
   countMoviesByStatus,
 } from "@/lib/db"
@@ -14,12 +16,19 @@ import type { MovieStatus, Movie } from "@/types"
 // Runtime edge for Cloudflare
 export const runtime = "edge"
 
-// GET /api/movies - List user's movies
+// GET /api/movies - List user's movies or get single movie
 export async function GET(request: NextRequest) {
   try {
     const { env } = getRequestContext()
     const { searchParams } = new URL(request.url)
+    const id = searchParams.get("id")
     const status = searchParams.get("status") as MovieStatus | null
+
+    // If ID is provided, return single movie
+    if (id) {
+      const movie = await getUserMovie(env.DB, id)
+      return NextResponse.json(movie)
+    }
 
     const [movies, counts] = await Promise.all([
       getUserMovies(env.DB),
@@ -109,26 +118,33 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PATCH /api/movies - Update movie status
+// PATCH /api/movies - Update movie status or rating
 export async function PATCH(request: NextRequest) {
   try {
     const { env } = getRequestContext()
     const body = await request.json()
-    const { id, status } = body as { id: string; status: MovieStatus }
+    const { id, status, rating } = body as { id: string; status?: MovieStatus; rating?: number }
 
-    if (!id || !status) {
+    if (!id) {
       return NextResponse.json(
-        { error: "Movie ID and status are required" },
+        { error: "Movie ID is required" },
         { status: 400 }
       )
     }
 
-    await updateMovieStatus(env.DB, id, status)
+    if (status) {
+      await updateMovieStatus(env.DB, id, status)
+    }
+
+    if (rating !== undefined) {
+      await updateMovieRating(env.DB, id, rating)
+    }
 
     return NextResponse.json({
       success: true,
       id,
       status,
+      rating,
     })
   } catch (error) {
     console.error("Error updating movie:", error)
