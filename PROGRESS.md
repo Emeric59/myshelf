@@ -120,15 +120,15 @@
 - [x] **SearchDetailModal** : Popup avec détails avant ajout à la bibliothèque
 - [x] **Déduplication** : Fusion des résultats par ISBN ou titre+auteur
 - [x] **Enrichissement Hardcover** : Tropes, moods, content warnings, description
-- [x] **Fix parsing Hardcover** : Tags sont des strings simples (pas des objets complexes)
 - [x] **Synopsis affiché** : Dans le modal et sauvegardé en DB
 - [x] **Fix Cloudflare env** : Flag `nodejs_compat_populate_process_env` pour `process.env`
 - [x] **Fix query_type** : Changé de `"Book"` à `"books"` (minuscule, pluriel)
 - [x] **Fix search results** : Format `results.hits[].document`
-- [x] **Fix cached_tags** : Ce sont des `string[]` simples, pas des objets
 - [x] **Parsing JSON DB** : Ajout fonction `parseBookJsonFields` pour genres/tropes/moods
-- [x] **Affichage tropes/moods** : Section ajoutée sur la page détail livre `/books/[id]`
+- [x] **Affichage tropes/moods** : Section avec badges colorés sur `/books/[id]`
 - [x] **Documentation API** : Fichier `docs/HARDCOVER_API_DOCS.md` ajouté
+- [x] **Fix tags robuste** : `extractTagStrings()` gère strings ET objets `{tag, tagSlug, ...}`
+- [x] **SearchDetailModal amélioré** : Badges colorés (genres gris, tropes violet, moods vert, warnings orange)
 
 ---
 

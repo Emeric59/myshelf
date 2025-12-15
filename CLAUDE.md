@@ -53,6 +53,7 @@ wrangler d1 execute myshelf-db --file=./migrations/002_seed_tropes.sql --remote
 # .env.local (dev)
 TMDB_API_KEY=xxx
 GEMINI_API_KEY=xxx
+HARDCOVER_API_KEY=xxx  # Pour les métadonnées livres (genres, tropes, moods)
 
 # Production: configurées dans Cloudflare Dashboard
 ```
@@ -91,6 +92,16 @@ export async function GET() {
   // ...
 }
 ```
+
+### Variables d'environnement (process.env)
+
+Pour que `process.env` fonctionne sur Cloudflare Workers, le flag suivant est requis dans `wrangler.toml` :
+
+```toml
+compatibility_flags = ["nodejs_compat", "nodejs_compat_populate_process_env"]
+```
+
+Sans ce flag, les clés API ne seront pas accessibles via `process.env.HARDCOVER_API_KEY` etc.
 
 ## TypeScript - Pièges courants
 
@@ -159,6 +170,7 @@ src/
 ├── lib/
 │   ├── api/
 │   │   ├── openLibrary.ts      # ATTENTION: camelCase !
+│   │   ├── hardcover.ts        # GraphQL API pour métadonnées livres
 │   │   └── tmdb.ts
 │   └── db/                     # Helpers D1
 └── components/
@@ -167,9 +179,17 @@ src/
 
 ## APIs externes
 
-### Open Library (Livres)
+### Open Library (Livres - recherche & données de base)
 - Base URL: `https://openlibrary.org`
 - Pas d'authentification requise
+
+### Hardcover (Livres - métadonnées enrichies)
+- Base URL: `https://api.hardcover.app/v1/graphql`
+- Header: `Authorization: Bearer {HARDCOVER_API_KEY}`
+- GraphQL API (via Typesense pour la recherche)
+- Fournit: genres, tropes, moods, content warnings
+- **Important**: `query_type` doit être `"books"` (minuscules, pluriel)
+- **Important**: `cached_tags` peut contenir des strings OU des objets `{tag, tagSlug, ...}`
 
 ### TMDB (Films & Séries)
 - Base URL: `https://api.themoviedb.org/3`
