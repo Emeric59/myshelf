@@ -232,6 +232,26 @@ export async function getHardcoverBookByTitleAuthor(
 }
 
 /**
+ * Extract string from tag (handles both string and object formats)
+ * Hardcover API can return tags as strings OR as objects {tag, tagSlug, category, ...}
+ */
+function extractTagString(tag: unknown): string {
+  if (typeof tag === "string") return tag
+  if (tag && typeof tag === "object" && "tag" in tag) {
+    return (tag as { tag: string }).tag
+  }
+  return String(tag)
+}
+
+/**
+ * Extract string array from tags (handles mixed formats)
+ */
+function extractTagStrings(tags: unknown[] | undefined, limit: number): string[] {
+  if (!tags || !Array.isArray(tags)) return []
+  return tags.slice(0, limit).map(extractTagString)
+}
+
+/**
  * Parse raw Hardcover book data to our format
  * Used for books query (detailed book info)
  */
@@ -257,11 +277,11 @@ function parseHardcoverBook(book: HardcoverBookRaw): HardcoverBookResult {
     releaseDate: book.release_date,
     coverUrl: book.cached_image,
     authors,
-    // cached_tags contains string arrays directly
-    genres: tags.Genre?.slice(0, 5) || [],
-    tropes: tags.Trope?.slice(0, 8) || [],
-    moods: tags.Mood?.slice(0, 5) || [],
-    contentWarnings: tags["Content Warning"]?.slice(0, 6) || [],
+    // cached_tags can contain strings OR objects - extract safely
+    genres: extractTagStrings(tags.Genre as unknown[], 5),
+    tropes: extractTagStrings(tags.Trope as unknown[], 8),
+    moods: extractTagStrings(tags.Mood as unknown[], 5),
+    contentWarnings: extractTagStrings(tags["Content Warning"] as unknown[], 6),
     // Series info not available from books query - use search results instead
     seriesName: undefined,
   }
@@ -283,10 +303,10 @@ function parseHardcoverSearchResults(hits: HardcoverSearchHit[]): HardcoverBookR
       pages: doc.pages,
       coverUrl: doc.image,
       authors: doc.author_names || [],
-      // Search results have limited tag data
+      // Search results have limited tag data - extract safely
       genres: [],
-      tropes: doc.tags?.slice(0, 5) || [],
-      moods: doc.moods || [],
+      tropes: extractTagStrings(doc.tags as unknown[], 5),
+      moods: extractTagStrings(doc.moods as unknown[], 5),
       contentWarnings: [],
       seriesName: doc.series_names?.[0],
       releaseDate: doc.release_year?.toString(),
