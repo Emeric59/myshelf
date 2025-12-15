@@ -69,7 +69,8 @@ export default function RankingsPage() {
         })
         .slice(0, 10)
         .map((item) => ({
-          id: item.id || item.book_id || item.movie_id || item.show_id || "",
+          // Utiliser book_id/movie_id/show_id pour les URLs de détail
+          id: item.book_id || item.movie_id || item.show_id || item.id || "",
           title: item.title,
           subtitle: item.author || item.director || item.creator || "",
           rating: item.rating || 0,

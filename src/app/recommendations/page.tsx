@@ -48,13 +48,31 @@ export default function RecommendationsPage() {
       const response = await fetch("/api/recommendations/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: mood.prompt }),
+        body: JSON.stringify({ query: mood.prompt }),
       })
 
       if (!response.ok) throw new Error("Failed to get recommendations")
 
-      const data = await response.json() as { recommendations?: RecommendationItem[] }
-      setRecommendations(data.recommendations || [])
+      const data = await response.json() as {
+        recommendations?: Array<{
+          type: "book" | "movie" | "show"
+          title: string
+          author?: string
+          year?: number
+          reason: string
+        }>
+      }
+
+      // Adapter le format de réponse de l'API au format attendu
+      const formattedRecos: RecommendationItem[] = (data.recommendations || []).map((reco, index) => ({
+        id: `reco-${index}`,
+        type: reco.type,
+        title: reco.title,
+        subtitle: reco.author || (reco.year ? String(reco.year) : undefined),
+        reason: reco.reason,
+      }))
+
+      setRecommendations(formattedRecos)
     } catch (error) {
       console.error("Error getting recommendations:", error)
     } finally {
