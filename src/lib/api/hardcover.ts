@@ -6,12 +6,22 @@
 const HARDCOVER_URL = "https://api.hardcover.app/v1/graphql"
 
 // Types for Hardcover API responses
+interface HardcoverTagItem {
+  tag: string
+  tagSlug: string
+  category: string
+  categorySlug: string
+  spoilerRatio?: number
+  count?: number
+}
+
 interface HardcoverCachedTags {
-  Genre?: string[]
-  Trope?: string[]
-  Mood?: string[]
-  "Content Warning"?: string[]
-  Theme?: string[]
+  Genre?: HardcoverTagItem[]
+  Trope?: HardcoverTagItem[]
+  Mood?: HardcoverTagItem[]
+  "Content Warning"?: HardcoverTagItem[]
+  Tag?: HardcoverTagItem[]  // This contains trope-like data (dragons, enemies to lovers, etc.)
+  Theme?: HardcoverTagItem[]
 }
 
 interface HardcoverContributor {
@@ -170,10 +180,6 @@ export async function getHardcoverBookDetails(slug: string): Promise<HardcoverBo
         cached_image
         cached_contributors
         cached_tags
-        series {
-          name
-          position
-        }
       }
     }
   `
@@ -219,6 +225,14 @@ export async function getHardcoverBookByTitleAuthor(
 }
 
 /**
+ * Extract tag strings from Hardcover tag items
+ */
+function extractTagStrings(items: HardcoverTagItem[] | undefined, limit = 10): string[] {
+  if (!items || items.length === 0) return []
+  return items.slice(0, limit).map((item) => item.tag)
+}
+
+/**
  * Parse raw Hardcover book data to our format
  */
 function parseHardcoverBook(book: HardcoverBookRaw): HardcoverBookResult {
@@ -232,6 +246,20 @@ function parseHardcoverBook(book: HardcoverBookRaw): HardcoverBookResult {
   // Get series info
   const series = book.series?.[0]
 
+  // Extract genres
+  const genres = extractTagStrings(tags.Genre, 5)
+
+  // Tropes come from both "Trope" and "Tag" categories
+  // "Tag" contains trope-like data such as "dragons", "enemies to lovers", etc.
+  const tropeItems = [...(tags.Trope || []), ...(tags.Tag || [])]
+  const tropes = extractTagStrings(tropeItems, 8)
+
+  // Extract moods
+  const moods = extractTagStrings(tags.Mood, 5)
+
+  // Extract content warnings
+  const contentWarnings = extractTagStrings(tags["Content Warning"], 6)
+
   return {
     id: book.id,
     title: book.title,
@@ -241,10 +269,10 @@ function parseHardcoverBook(book: HardcoverBookRaw): HardcoverBookResult {
     releaseDate: book.release_date,
     coverUrl: book.cached_image,
     authors,
-    genres: tags.Genre || [],
-    tropes: tags.Trope || [],
-    moods: tags.Mood || [],
-    contentWarnings: tags["Content Warning"] || [],
+    genres,
+    tropes,
+    moods,
+    contentWarnings,
     seriesName: series?.name,
     seriesPosition: series?.position,
   }
