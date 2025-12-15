@@ -147,10 +147,32 @@ export async function searchHardcover(query: string): Promise<HardcoverBookResul
   `
 
   try {
-    const data = await executeGraphQL<{ search: { results: HardcoverSearchResult[] } }>(graphqlQuery)
+    const data = await executeGraphQL<{ search: { results: unknown } }>(graphqlQuery)
 
-    // Results is a direct array of search results
-    const results = data.search?.results || []
+    // Debug: log the raw results structure
+    console.log("[Hardcover] Raw results type:", typeof data.search?.results)
+    console.log("[Hardcover] Raw results:", JSON.stringify(data.search?.results)?.slice(0, 500))
+
+    // Results might be a JSON string or an object with hits
+    let results: HardcoverSearchResult[] = []
+    const rawResults = data.search?.results
+
+    if (Array.isArray(rawResults)) {
+      results = rawResults
+    } else if (typeof rawResults === "string") {
+      // Results might be a JSON string
+      try {
+        const parsed = JSON.parse(rawResults)
+        results = Array.isArray(parsed) ? parsed : parsed.hits || []
+      } catch {
+        console.error("[Hardcover] Failed to parse results string")
+      }
+    } else if (rawResults && typeof rawResults === "object") {
+      // Results might be an object with hits array
+      const obj = rawResults as { hits?: HardcoverSearchResult[] }
+      results = obj.hits || []
+    }
+
     return parseHardcoverSearchResults(results)
   } catch (error) {
     console.error("Hardcover search error:", error)
