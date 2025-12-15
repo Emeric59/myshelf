@@ -4,8 +4,8 @@
 
 ## Statut actuel
 
-**Phase :** Phase 10 - Recherche multi-sources livres
-**Dernière mise à jour :** 2025-12-15 (session 4)
+**Phase :** Phase 10 - Recherche multi-sources livres (TERMINÉE)
+**Dernière mise à jour :** 2025-12-15 (session 5 - fix Hardcover API)
 **Build :** OK
 **Déployé :** https://myshelf-d69.pages.dev
 **État DB prod :** Vraies données avec descriptions en français (10 livres, 10 films, 10 séries)
@@ -112,7 +112,7 @@
 - [ ] Export des données (optionnel)
 - [ ] Thème clair/sombre (optionnel)
 
-### Phase 10 : Recherche multi-sources livres - EN COURS
+### Phase 10 : Recherche multi-sources livres - TERMINÉE
 - [x] **Google Books API** : Client `src/lib/api/googleBooks.ts`
 - [x] **Hardcover API** : Client GraphQL `src/lib/api/hardcover.ts`
 - [x] **Orchestrateur multi-sources** : `src/lib/api/bookSearch.ts`
@@ -120,10 +120,15 @@
 - [x] **SearchDetailModal** : Popup avec détails avant ajout à la bibliothèque
 - [x] **Déduplication** : Fusion des résultats par ISBN ou titre+auteur
 - [x] **Enrichissement Hardcover** : Tropes, moods, content warnings, description
-- [x] **Fix parsing Hardcover** : Tags sont des objets `{tag, tagSlug}` pas des strings
+- [x] **Fix parsing Hardcover** : Tags sont des strings simples (pas des objets complexes)
 - [x] **Synopsis affiché** : Dans le modal et sauvegardé en DB
-- [ ] **Debug en cours** : Vérifier que les 3 APIs retournent des données (logs)
-- [ ] Afficher tropes/moods sur la fiche livre dans la bibliothèque
+- [x] **Fix Cloudflare env** : Flag `nodejs_compat_populate_process_env` pour `process.env`
+- [x] **Fix query_type** : Changé de `"Book"` à `"books"` (minuscule, pluriel)
+- [x] **Fix search results** : Format `results.hits[].document`
+- [x] **Fix cached_tags** : Ce sont des `string[]` simples, pas des objets
+- [x] **Parsing JSON DB** : Ajout fonction `parseBookJsonFields` pour genres/tropes/moods
+- [x] **Affichage tropes/moods** : Section ajoutée sur la page détail livre `/books/[id]`
+- [x] **Documentation API** : Fichier `docs/HARDCOVER_API_DOCS.md` ajouté
 
 ---
 

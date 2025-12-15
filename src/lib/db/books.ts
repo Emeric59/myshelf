@@ -5,6 +5,17 @@
 import type { D1Database } from '@cloudflare/workers-types'
 import type { Book, UserBook, BookStatus } from '@/types'
 
+// Parse JSON fields from DB
+function parseBookJsonFields(book: Record<string, unknown>): UserBook & Book {
+  return {
+    ...book,
+    genres: book.genres ? JSON.parse(book.genres as string) : undefined,
+    tropes: book.tropes ? JSON.parse(book.tropes as string) : undefined,
+    moods: book.moods ? JSON.parse(book.moods as string) : undefined,
+    content_warnings: book.content_warnings ? JSON.parse(book.content_warnings as string) : undefined,
+  } as UserBook & Book
+}
+
 // Récupérer tous les livres de l'utilisateur
 export async function getUserBooks(db: D1Database): Promise<(UserBook & Book)[]> {
   const result = await db
@@ -29,7 +40,7 @@ export async function getUserBooks(db: D1Database): Promise<(UserBook & Book)[]>
     `)
     .all()
 
-  return result.results as unknown as (UserBook & Book)[]
+  return (result.results as Record<string, unknown>[]).map(parseBookJsonFields)
 }
 
 // Récupérer un livre par ID
@@ -60,7 +71,8 @@ export async function getUserBook(
     .bind(bookId)
     .first()
 
-  return result as (UserBook & Book) | null
+  if (!result) return null
+  return parseBookJsonFields(result as Record<string, unknown>)
 }
 
 // Vérifier si un livre existe dans le cache

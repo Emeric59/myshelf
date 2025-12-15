@@ -359,8 +359,71 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
 
+        {/* Genres, Tropes, Moods */}
+        {(book.genres?.length || book.tropes?.length || book.moods?.length) && (
+          <Card className="mt-6">
+            <CardContent className="p-4 space-y-4">
+              {/* Genres */}
+              {book.genres && book.genres.length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Genres</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {book.genres.map((genre) => (
+                      <Badge key={genre} variant="secondary">
+                        {genre}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Tropes */}
+              {book.tropes && book.tropes.length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Tropes</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {book.tropes.map((trope) => (
+                      <Badge key={trope} variant="outline" className="border-primary/50 text-primary">
+                        {trope}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Moods */}
+              {book.moods && book.moods.length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Ambiance</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {book.moods.map((mood) => (
+                      <Badge key={mood} variant="outline" className="border-green-500/50 text-green-600 dark:text-green-400">
+                        {mood}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Content Warnings */}
+              {book.content_warnings && book.content_warnings.length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Avertissements</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {book.content_warnings.map((warning) => (
+                      <Badge key={warning} variant="outline" className="border-orange-500/50 text-orange-600 dark:text-orange-400">
+                        ⚠️ {warning}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Status */}
-        <Card className="mt-6">
+        <Card className="mt-4">
           <CardContent className="p-4">
             <Label className="text-sm font-medium mb-3 block">Statut</Label>
             <div className="flex flex-wrap gap-2">
