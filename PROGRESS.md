@@ -4,8 +4,8 @@
 
 ## Statut actuel
 
-**Phase :** Phase 11 - Tracking épisodes séries (TERMINÉE)
-**Dernière mise à jour :** 2025-12-15 (session 6 - episode tracking)
+**Phase :** Phase 12 - Filtres et UX (TERMINÉE)
+**Dernière mise à jour :** 2025-12-16 (session 7 - filtres année, dismiss suggestions, tri bibliothèque)
 **Build :** OK
 **Déployé :** https://myshelf-d69.pages.dev
 **État DB prod :** Vraies données avec descriptions en français (10 livres, 10 films, 10 séries)
@@ -142,6 +142,18 @@
 - [x] **Progression automatique** : Calculée depuis épisodes vus (pas saison courante)
 - [x] **Actions rapides** : "Tout marquer vu" et "Réinitialiser" par saison
 
+### Phase 12 : Filtres et UX - TERMINÉE
+- [x] **Filtre par année** : Slider 1985-2025 sur recherche et recommandations IA
+- [x] **Composant Slider** : `src/components/ui/slider.tsx` avec support valeur nulle
+- [x] **Dismiss suggestions IA** : Bouton X avec dialog de confirmation
+- [x] **Raisons de refus** : "Déjà vu/lu", "Pas intéressé", "Autre" (stockées en DB)
+- [x] **Table dismissed_media** : Migration 009, stockage permanent des refus
+- [x] **API /api/dismissed** : GET, POST, DELETE pour gérer les médias refusés
+- [x] **Exclusion auto** : Médias refusés exclus des futures recommandations IA
+- [x] **Tri bibliothèque** : "En cours d'abord" par défaut (livres, films, séries)
+- [x] **Options de tri** : En cours d'abord, Récent, Note
+- [x] **Utilitaire sorting** : `src/lib/utils/sorting.ts` avec priorités par statut
+
 ---
 
 ## Migrations D1
@@ -156,6 +168,7 @@
 | `006_french_descriptions.sql` | Descriptions traduites en français | ✅ |
 | `007_add_book_enrichment.sql` | Colonnes enrichissement livres (tropes, moods, hardcover_slug, etc.) | ✅ |
 | `008_episode_tracking.sql` | Tables `show_seasons` et `watched_episodes` pour tracking épisodes | ✅ |
+| `009_dismissed_media.sql` | Table `dismissed_media` pour refus de suggestions IA | ✅ |
 
 > **Note :** La DB contient des données réelles avec descriptions en français, IDs vérifiés via APIs officielles (Open Library + TMDB).
 
@@ -177,6 +190,7 @@
 | `/api/recommendations/ask` | POST | Recommandations IA (Gemini 2.5 Flash) |
 | `/api/subscriptions` | GET, POST | Abonnements streaming |
 | `/api/episodes` | GET, POST, DELETE | Tracking épisodes séries (style TV Time) |
+| `/api/dismissed` | GET, POST, DELETE | Médias refusés dans recommandations IA |
 
 ---
 
@@ -247,8 +261,15 @@ src/
 
 ---
 
-## Prochaines actions (optionnelles)
+## Prochaines actions
 
+> Voir **NEXT_SESSION.md** pour les idées détaillées de la prochaine session.
+
+**Prioritaires :**
+- Exploiter les raisons de refus (patterns pour améliorer les recos)
+- Page `/settings/dismissed` pour gérer les médias refusés
+
+**Optionnelles :**
 - Service worker avancé pour mode offline complet
 - Import BookNode / TV Time
 - Embeddings Vectorize pour recommandations sémantiques
