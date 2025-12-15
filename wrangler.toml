@@ -13,14 +13,14 @@ database_id = "2bf81530-3003-4748-958a-111383c35183"
 [vars]
 ENVIRONMENT = "production"
 
-# For local development
-[env.dev]
-name = "myshelf-dev"
+# Preview environment (for non-production branches)
+[env.preview]
+name = "myshelf-preview"
 
-[[env.dev.d1_databases]]
+[[env.preview.d1_databases]]
 binding = "DB"
 database_name = "myshelf-db"
 database_id = "2bf81530-3003-4748-958a-111383c35183"
 
-[env.dev.vars]
-ENVIRONMENT = "development"
+[env.preview.vars]
+ENVIRONMENT = "preview"
