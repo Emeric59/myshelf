@@ -4,8 +4,8 @@
 
 ## Statut actuel
 
-**Phase :** Phase 9 - Améliorations UX et features complémentaires
-**Dernière mise à jour :** 2025-12-15 (session 3)
+**Phase :** Phase 10 - Recherche multi-sources livres
+**Dernière mise à jour :** 2025-12-15 (session 4)
 **Build :** OK
 **Déployé :** https://myshelf-d69.pages.dev
 **État DB prod :** Vraies données avec descriptions en français (10 livres, 10 films, 10 séries)
@@ -112,6 +112,19 @@
 - [ ] Export des données (optionnel)
 - [ ] Thème clair/sombre (optionnel)
 
+### Phase 10 : Recherche multi-sources livres - EN COURS
+- [x] **Google Books API** : Client `src/lib/api/googleBooks.ts`
+- [x] **Hardcover API** : Client GraphQL `src/lib/api/hardcover.ts`
+- [x] **Orchestrateur multi-sources** : `src/lib/api/bookSearch.ts`
+- [x] **Migration enrichissement** : Colonnes tropes, moods, content_warnings, google_books_id, hardcover_slug
+- [x] **SearchDetailModal** : Popup avec détails avant ajout à la bibliothèque
+- [x] **Déduplication** : Fusion des résultats par ISBN ou titre+auteur
+- [x] **Enrichissement Hardcover** : Tropes, moods, content warnings, description
+- [x] **Fix parsing Hardcover** : Tags sont des objets `{tag, tagSlug}` pas des strings
+- [x] **Synopsis affiché** : Dans le modal et sauvegardé en DB
+- [ ] **Debug en cours** : Vérifier que les 3 APIs retournent des données (logs)
+- [ ] Afficher tropes/moods sur la fiche livre dans la bibliothèque
+
 ---
 
 ## Migrations D1
@@ -124,6 +137,7 @@
 | `004_real_data_seed.sql` | Vraies données (10 livres, 10 films, 10 séries) | ✅ |
 | `005_add_descriptions.sql` | Descriptions/synopsis (anglais) | ✅ |
 | `006_french_descriptions.sql` | Descriptions traduites en français | ✅ |
+| `007_add_book_enrichment.sql` | Colonnes enrichissement livres (tropes, moods, hardcover_slug, etc.) | ✅ |
 
 > **Note :** La DB contient des données réelles avec descriptions en français, IDs vérifiés via APIs officielles (Open Library + TMDB).
 
@@ -199,7 +213,10 @@ src/
 ├── lib/
 │   ├── api/
 │   │   ├── openLibrary.ts          # ATTENTION: camelCase !
-│   │   └── tmdb.ts
+│   │   ├── tmdb.ts
+│   │   ├── googleBooks.ts          # Google Books API client
+│   │   ├── hardcover.ts            # Hardcover GraphQL API client
+│   │   └── bookSearch.ts           # Orchestrateur multi-sources
 │   ├── ai/
 │   │   └── gemini.ts
 │   ├── db/                         # Helpers D1
@@ -293,11 +310,15 @@ wrangler d1 execute myshelf-db --remote --command="SELECT * FROM books;"
 ```bash
 TMDB_API_KEY=xxx
 GEMINI_API_KEY=xxx
+GOOGLE_BOOKS_API_KEY=xxx
+HARDCOVER_API_KEY=xxx
 ```
 
 ### Production (Cloudflare Dashboard)
 - TMDB_API_KEY
 - GEMINI_API_KEY
+- GOOGLE_BOOKS_API_KEY
+- HARDCOVER_API_KEY
 
 ---
 
@@ -333,3 +354,71 @@ GEMINI_API_KEY=xxx
 20. **Overflow mobile** : Ajout `overflow-x-hidden` global dans CSS pour empêcher scroll horizontal
 21. **Rankings redesign** : Passage de Top 10 à groupes par étoiles (5★ Coups de coeur, 4★ Excellents, etc.)
 22. **Notes personnelles** : Label mis à jour pour indiquer que c'est privé (non utilisé par IA)
+23. **Hardcover parsing** : Les tags sont des objets `{tag, tagSlug, category}` pas des strings simples
+24. **Tropes Hardcover** : Combinaison des catégories "Trope" et "Tag" (Hardcover utilise "Tag" pour les tropes)
+25. **Synopsis manquant** : Ajout de `description` et `pageCount` au payload d'ajout livre
+
+---
+
+## Architecture recherche livres multi-sources
+
+```
+Recherche "Fourth Wing"
+         │
+         ▼
+┌─────────────────────────────────────────────────────────┐
+│              searchBooksMultiSource()                    │
+│                   (bookSearch.ts)                        │
+└─────────────────────────────────────────────────────────┘
+         │
+         ├──────────────────┼──────────────────┐
+         ▼                  ▼                  ▼
+   ┌──────────┐      ┌──────────┐      ┌──────────┐
+   │  Google  │      │   Open   │      │ Hardcover│
+   │  Books   │      │ Library  │      │ (GraphQL)│
+   └──────────┘      └──────────┘      └──────────┘
+         │                  │                  │
+         └──────────────────┼──────────────────┘
+                            ▼
+              ┌─────────────────────────┐
+              │   mergeBookResults()    │
+              │   - Dédupe par ISBN     │
+              │   - Dédupe par titre    │
+              │   - Fusion métadonnées  │
+              └─────────────────────────┘
+                            │
+                            ▼
+              ┌─────────────────────────┐
+              │ enrichWithHardcover()   │
+              │   - Fetch détails       │
+              │   - Tropes, moods       │
+              │   - Content warnings    │
+              └─────────────────────────┘
+                            │
+                            ▼
+                   UnifiedBookResult[]
+```
+
+### Données récupérées par source
+
+| Source | Données |
+|--------|---------|
+| Google Books | Titre, auteurs, ISBN, description, couverture, pages, catégories |
+| Open Library | Titre, auteur, ISBN, couverture, date publication |
+| Hardcover | Genres, tropes (via "Tag"), moods, content warnings, série |
+
+### Debug logs
+
+Pour voir les logs en temps réel lors d'une recherche :
+```bash
+npx wrangler pages deployment tail myshelf --project-name=myshelf
+```
+
+Les logs montrent :
+```
+[BookSearch] Query: "Fourth Wing"
+[BookSearch] Google Books: 15 results
+[BookSearch] Open Library: 12 results
+[BookSearch] Hardcover: 8 results
+[Enrich] Found Fourth Wing on Hardcover by title search
+```
