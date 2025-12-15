@@ -1,26 +1,29 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { ArrowLeft, Send, Sparkles, Loader2, Book, Film, Tv } from "lucide-react"
+import { ArrowLeft, Send, Sparkles, Loader2, Book, Film, Tv, Check, Search } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
-import { MediaCard } from "@/components/media"
 import { cn } from "@/lib/utils"
+
+interface RecommendationItem {
+  id: string
+  type: "book" | "movie" | "show"
+  title: string
+  subtitle?: string
+  image_url?: string
+  reason: string
+  added?: boolean
+  loading?: boolean
+}
 
 interface Message {
   id: string
   role: "user" | "assistant"
   content: string
-  recommendations?: Array<{
-    id: string
-    type: "book" | "movie" | "show"
-    title: string
-    subtitle?: string
-    image_url?: string
-    reason: string
-  }>
+  recommendations?: RecommendationItem[]
 }
 
 const suggestions = [
@@ -44,6 +47,75 @@ export default function AskPage() {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  // Search for media and add to library
+  const handleAddToLibrary = async (messageId: string, recoId: string, reco: RecommendationItem) => {
+    // Mark as loading
+    setMessages(prev => prev.map(msg => {
+      if (msg.id === messageId && msg.recommendations) {
+        return {
+          ...msg,
+          recommendations: msg.recommendations.map(r =>
+            r.id === recoId ? { ...r, loading: true } : r
+          )
+        }
+      }
+      return msg
+    }))
+
+    try {
+      // Search for the media first
+      const searchResponse = await fetch(
+        `/api/search?q=${encodeURIComponent(reco.title)}&type=${reco.type === 'book' ? 'books' : reco.type === 'movie' ? 'movies' : 'shows'}`
+      )
+      const searchData = await searchResponse.json() as { results?: Array<{ id: string; title: string }> }
+
+      if (!searchData.results || searchData.results.length === 0) {
+        throw new Error('Media not found')
+      }
+
+      // Get the first match
+      const media = searchData.results[0]
+
+      // Add to library based on type
+      const endpoint = reco.type === 'book' ? '/api/books' : reco.type === 'movie' ? '/api/movies' : '/api/shows'
+      const status = reco.type === 'book' ? 'to_read' : 'to_watch'
+
+      await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: media.id, status }),
+      })
+
+      // Mark as added
+      setMessages(prev => prev.map(msg => {
+        if (msg.id === messageId && msg.recommendations) {
+          return {
+            ...msg,
+            recommendations: msg.recommendations.map(r =>
+              r.id === recoId ? { ...r, loading: false, added: true } : r
+            )
+          }
+        }
+        return msg
+      }))
+    } catch (error) {
+      console.error('Error adding to library:', error)
+      // Reset loading state on error
+      setMessages(prev => prev.map(msg => {
+        if (msg.id === messageId && msg.recommendations) {
+          return {
+            ...msg,
+            recommendations: msg.recommendations.map(r =>
+              r.id === recoId ? { ...r, loading: false } : r
+            )
+          }
+        }
+        return msg
+      }))
+      alert('Impossible de trouver ce média. Essaie de le chercher manuellement.')
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -200,8 +272,22 @@ export default function AskPage() {
                                   "{reco.reason}"
                                 </p>
                               </div>
-                              <Button size="sm" variant="secondary">
-                                Ajouter
+                              <Button
+                                size="sm"
+                                variant={reco.added ? "default" : "secondary"}
+                                disabled={reco.loading || reco.added}
+                                onClick={() => handleAddToLibrary(message.id, reco.id, reco)}
+                              >
+                                {reco.loading ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : reco.added ? (
+                                  <>
+                                    <Check className="h-4 w-4 mr-1" />
+                                    Ajouté
+                                  </>
+                                ) : (
+                                  "Ajouter"
+                                )}
                               </Button>
                             </div>
                           </CardContent>

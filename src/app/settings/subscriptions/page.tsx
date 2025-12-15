@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { ArrowLeft, Tv, BookOpen, Check } from "lucide-react"
+import { useState, useEffect } from "react"
+import { ArrowLeft, Tv, BookOpen, Check, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -28,16 +28,89 @@ const readingProviders = [
 export default function SubscriptionsPage() {
   const [activeVideo, setActiveVideo] = useState<string[]>([])
   const [activeReading, setActiveReading] = useState<string[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  // Load existing subscriptions
+  useEffect(() => {
+    const fetchSubscriptions = async () => {
+      try {
+        const res = await fetch("/api/subscriptions")
+        if (res.ok) {
+          const data = await res.json() as Array<{ provider_id: string; provider_type: string }>
+          const videoIds = data.filter(s => s.provider_type === "video").map(s => s.provider_id)
+          const readingIds = data.filter(s => s.provider_type === "reading").map(s => s.provider_id)
+          setActiveVideo(videoIds)
+          setActiveReading(readingIds)
+        }
+      } catch (error) {
+        console.error("Error loading subscriptions:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchSubscriptions()
+  }, [])
 
   const toggleVideo = (id: string) => {
     setActiveVideo((prev) =>
       prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
     )
+    setSaved(false)
   }
 
   const toggleReading = (id: string) => {
     setActiveReading((prev) =>
       prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
+    )
+    setSaved(false)
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    setSaved(false)
+    try {
+      const subscriptions = [
+        ...activeVideo.map(id => {
+          const provider = videoProviders.find(p => p.id === id)
+          return {
+            provider_id: id,
+            provider_name: provider?.name || id,
+            provider_type: "video" as const,
+          }
+        }),
+        ...activeReading.map(id => {
+          const provider = readingProviders.find(p => p.id === id)
+          return {
+            provider_id: id,
+            provider_name: provider?.name || id,
+            provider_type: "reading" as const,
+          }
+        }),
+      ]
+
+      const res = await fetch("/api/subscriptions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subscriptions }),
+      })
+
+      if (res.ok) {
+        setSaved(true)
+      }
+    } catch (error) {
+      console.error("Error saving subscriptions:", error)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     )
   }
 
@@ -141,12 +214,21 @@ export default function SubscriptionsPage() {
 
         {/* Save button */}
         <div className="mt-6">
-          <Button className="w-full" disabled>
-            Sauvegarder
+          <Button className="w-full" onClick={handleSave} disabled={saving}>
+            {saving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Sauvegarde...
+              </>
+            ) : saved ? (
+              <>
+                <Check className="h-4 w-4 mr-2" />
+                Sauvegardé !
+              </>
+            ) : (
+              "Sauvegarder"
+            )}
           </Button>
-          <p className="text-xs text-muted-foreground text-center mt-2">
-            La sauvegarde nécessite la connexion à la base de données
-          </p>
         </div>
       </main>
     </div>
