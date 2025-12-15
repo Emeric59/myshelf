@@ -1,9 +1,51 @@
-import { Book, Film, Tv, Search, Sparkles, BarChart3 } from "lucide-react"
+"use client"
+
+import { useState, useEffect } from "react"
+import { Book, Film, Tv, Search, Sparkles, BarChart3, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
+interface LibraryCounts {
+  books: number
+  movies: number
+  shows: number
+}
+
 export default function Home() {
+  const [counts, setCounts] = useState<LibraryCounts>({ books: 0, movies: 0, shows: 0 })
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const [booksRes, moviesRes, showsRes] = await Promise.all([
+          fetch("/api/books"),
+          fetch("/api/movies"),
+          fetch("/api/shows"),
+        ])
+
+        const [booksData, moviesData, showsData] = await Promise.all([
+          booksRes.json() as Promise<{ total: number }>,
+          moviesRes.json() as Promise<{ total: number }>,
+          showsRes.json() as Promise<{ total: number }>,
+        ])
+
+        setCounts({
+          books: booksData.total || 0,
+          movies: moviesData.total || 0,
+          shows: showsData.total || 0,
+        })
+      } catch (error) {
+        console.error("Error fetching counts:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCounts()
+  }, [])
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -12,8 +54,10 @@ export default function Home() {
           <h1 className="font-display text-xl font-semibold text-primary">
             MyShelf
           </h1>
-          <Button variant="ghost" size="icon">
-            <Search className="h-5 w-5" />
+          <Button variant="ghost" size="icon" asChild>
+            <Link href="/search">
+              <Search className="h-5 w-5" />
+            </Link>
           </Button>
         </div>
       </header>
@@ -50,7 +94,7 @@ export default function Home() {
               </Card>
             </Link>
 
-            <Link href="/recommendations">
+            <Link href="/recommendations/ask">
               <Card className="hover:border-secondary transition-colors cursor-pointer">
                 <CardHeader className="pb-2">
                   <Sparkles className="h-8 w-8 text-secondary mb-2" />
@@ -77,7 +121,11 @@ export default function Home() {
                 <CardContent className="pt-6">
                   <Book className="h-10 w-10 text-primary mx-auto mb-2" />
                   <p className="font-medium">Livres</p>
-                  <p className="text-2xl font-bold text-primary">0</p>
+                  {loading ? (
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto mt-1 text-primary" />
+                  ) : (
+                    <p className="text-2xl font-bold text-primary">{counts.books}</p>
+                  )}
                 </CardContent>
               </Card>
             </Link>
@@ -87,7 +135,11 @@ export default function Home() {
                 <CardContent className="pt-6">
                   <Film className="h-10 w-10 text-primary mx-auto mb-2" />
                   <p className="font-medium">Films</p>
-                  <p className="text-2xl font-bold text-primary">0</p>
+                  {loading ? (
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto mt-1 text-primary" />
+                  ) : (
+                    <p className="text-2xl font-bold text-primary">{counts.movies}</p>
+                  )}
                 </CardContent>
               </Card>
             </Link>
@@ -97,7 +149,11 @@ export default function Home() {
                 <CardContent className="pt-6">
                   <Tv className="h-10 w-10 text-primary mx-auto mb-2" />
                   <p className="font-medium">Séries</p>
-                  <p className="text-2xl font-bold text-primary">0</p>
+                  {loading ? (
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto mt-1 text-primary" />
+                  ) : (
+                    <p className="text-2xl font-bold text-primary">{counts.shows}</p>
+                  )}
                 </CardContent>
               </Card>
             </Link>
@@ -107,7 +163,7 @@ export default function Home() {
         {/* Stats Preview */}
         <section>
           <h3 className="font-display text-lg font-medium mb-4">
-            Cette semaine
+            Statistiques
           </h3>
           <Card>
             <CardContent className="pt-6">
@@ -116,7 +172,9 @@ export default function Home() {
                   <BarChart3 className="h-8 w-8 text-muted-foreground" />
                   <div>
                     <p className="text-muted-foreground text-sm">
-                      Commence à tracker tes médias pour voir tes stats !
+                      {counts.books + counts.movies + counts.shows > 0
+                        ? `${counts.books + counts.movies + counts.shows} médias dans ta bibliothèque`
+                        : "Commence à tracker tes médias pour voir tes stats !"}
                     </p>
                   </div>
                 </div>
@@ -163,7 +221,7 @@ export default function Home() {
           </Link>
 
           <Link
-            href="/recommendations"
+            href="/recommendations/ask"
             className="flex flex-col items-center gap-1 text-muted-foreground hover:text-primary"
           >
             <Sparkles className="h-6 w-6" />

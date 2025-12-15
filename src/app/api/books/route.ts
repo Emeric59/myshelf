@@ -9,6 +9,7 @@ import {
 } from "@/lib/api"
 import {
   getUserBooks,
+  getUserBook,
   cacheBook,
   addBookToLibrary,
   updateBookStatus,
@@ -20,13 +21,21 @@ import type { BookStatus, Book } from "@/types"
 // Runtime edge for Cloudflare
 export const runtime = "edge"
 
-// GET /api/books - List user's books
+// GET /api/books - List user's books or get single book
 export async function GET(request: NextRequest) {
   try {
     const { env } = getRequestContext()
     const { searchParams } = new URL(request.url)
+    const id = searchParams.get("id")
     const status = searchParams.get("status") as BookStatus | null
 
+    // If ID provided, return single book
+    if (id) {
+      const book = await getUserBook(env.DB, id)
+      return NextResponse.json(book)
+    }
+
+    // Otherwise return all books
     const [books, counts] = await Promise.all([
       getUserBooks(env.DB),
       countBooksByStatus(env.DB),
