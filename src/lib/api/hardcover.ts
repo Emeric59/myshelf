@@ -49,7 +49,8 @@ interface HardcoverBookRaw {
 }
 
 // Search results format (from Typesense via search endpoint)
-interface HardcoverSearchResult {
+// Results come as { hits: [{ document: {...} }] }
+interface HardcoverSearchDocument {
   id: number | string
   title: string
   slug: string
@@ -63,6 +64,16 @@ interface HardcoverSearchResult {
   moods?: string[]
   tags?: string[]
   image?: string
+}
+
+interface HardcoverSearchHit {
+  document: HardcoverSearchDocument
+}
+
+interface HardcoverSearchResults {
+  facet_counts?: unknown[]
+  found?: number
+  hits?: HardcoverSearchHit[]
 }
 
 export interface HardcoverBookResult {
@@ -147,33 +158,11 @@ export async function searchHardcover(query: string): Promise<HardcoverBookResul
   `
 
   try {
-    const data = await executeGraphQL<{ search: { results: unknown } }>(graphqlQuery)
+    const data = await executeGraphQL<{ search: { results: HardcoverSearchResults } }>(graphqlQuery)
 
-    // Debug: log the raw results structure
-    console.log("[Hardcover] Raw results type:", typeof data.search?.results)
-    console.log("[Hardcover] Raw results:", JSON.stringify(data.search?.results)?.slice(0, 500))
-
-    // Results might be a JSON string or an object with hits
-    let results: HardcoverSearchResult[] = []
-    const rawResults = data.search?.results
-
-    if (Array.isArray(rawResults)) {
-      results = rawResults
-    } else if (typeof rawResults === "string") {
-      // Results might be a JSON string
-      try {
-        const parsed = JSON.parse(rawResults)
-        results = Array.isArray(parsed) ? parsed : parsed.hits || []
-      } catch {
-        console.error("[Hardcover] Failed to parse results string")
-      }
-    } else if (rawResults && typeof rawResults === "object") {
-      // Results might be an object with hits array
-      const obj = rawResults as { hits?: HardcoverSearchResult[] }
-      results = obj.hits || []
-    }
-
-    return parseHardcoverSearchResults(results)
+    // Results is an object with { hits: [{ document: {...} }] }
+    const hits = data.search?.results?.hits || []
+    return parseHardcoverSearchResults(hits)
   } catch (error) {
     console.error("Hardcover search error:", error)
     return []
@@ -285,26 +274,27 @@ function parseHardcoverBook(book: HardcoverBookRaw): HardcoverBookResult {
 
 /**
  * Parse search results format
- * Search results have a flatter structure than the books query
+ * Search results come as hits[].document
  */
-function parseHardcoverSearchResults(results: HardcoverSearchResult[]): HardcoverBookResult[] {
-  return results.map((result) => {
-    const id = typeof result.id === "string" ? parseInt(result.id, 10) : result.id
+function parseHardcoverSearchResults(hits: HardcoverSearchHit[]): HardcoverBookResult[] {
+  return hits.map((hit) => {
+    const doc = hit.document
+    const id = typeof doc.id === "string" ? parseInt(doc.id, 10) : doc.id
 
     return {
       id: id || 0,
-      title: result.title,
-      slug: result.slug,
-      pages: result.pages,
-      coverUrl: result.image,
-      authors: result.author_names || [],
+      title: doc.title || "",
+      slug: doc.slug || "",
+      pages: doc.pages,
+      coverUrl: doc.image,
+      authors: doc.author_names || [],
       // Search results have limited tag data
       genres: [],
-      tropes: result.tags?.slice(0, 5) || [],
-      moods: result.moods || [],
+      tropes: doc.tags?.slice(0, 5) || [],
+      moods: doc.moods || [],
       contentWarnings: [],
-      seriesName: result.series_names?.[0],
-      releaseDate: result.release_year?.toString(),
+      seriesName: doc.series_names?.[0],
+      releaseDate: doc.release_year?.toString(),
     }
   })
 }
