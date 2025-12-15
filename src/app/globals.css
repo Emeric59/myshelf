@@ -1,0 +1,165 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Custom fonts */
+@font-face {
+  font-family: 'Playfair Display';
+  src: url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap');
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-playfair), ui-serif, Georgia, serif;
+
+  /* MyShelf custom colors */
+  --color-cream: #FAF7F2;
+  --color-cream-dark: #F5F0E8;
+
+  /* Primary - Violet palette */
+  --color-primary-50: #f5f3ff;
+  --color-primary-100: #ede9fe;
+  --color-primary-200: #ddd6fe;
+  --color-primary-300: #c4b5fd;
+  --color-primary-400: #a78bfa;
+  --color-primary-500: #8b5cf6;
+  --color-primary-600: #7c3aed;
+  --color-primary-700: #6d28d9;
+  --color-primary-800: #5b21b6;
+  --color-primary-900: #4c1d95;
+
+  /* Secondary - Green nature palette */
+  --color-secondary-50: #ecfdf5;
+  --color-secondary-100: #d1fae5;
+  --color-secondary-200: #a7f3d0;
+  --color-secondary-300: #6ee7b7;
+  --color-secondary-400: #34d399;
+  --color-secondary-500: #10b981;
+  --color-secondary-600: #059669;
+  --color-secondary-700: #047857;
+  --color-secondary-800: #065f46;
+  --color-secondary-900: #064e3b;
+
+  /* shadcn mappings */
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+}
+
+:root {
+  --radius: 0.75rem;
+  /* MyShelf Light Theme - Cream/Violet/Green */
+  --background: #FAF7F2;
+  --foreground: #1c1917;
+  --card: #FFFFFF;
+  --card-foreground: #1c1917;
+  --popover: #FFFFFF;
+  --popover-foreground: #1c1917;
+  --primary: #8b5cf6;
+  --primary-foreground: #FFFFFF;
+  --secondary: #10b981;
+  --secondary-foreground: #FFFFFF;
+  --muted: #F5F0E8;
+  --muted-foreground: #78716c;
+  --accent: #ede9fe;
+  --accent-foreground: #4c1d95;
+  --destructive: #ef4444;
+  --border: #e7e5e4;
+  --input: #e7e5e4;
+  --ring: #8b5cf6;
+  --chart-1: #8b5cf6;
+  --chart-2: #10b981;
+  --chart-3: #f59e0b;
+  --chart-4: #06b6d4;
+  --chart-5: #ec4899;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #1c1917;
+  --sidebar-primary: #8b5cf6;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #f5f3ff;
+  --sidebar-accent-foreground: #4c1d95;
+  --sidebar-border: #e7e5e4;
+  --sidebar-ring: #8b5cf6;
+}
+
+.dark {
+  --background: #1c1917;
+  --foreground: #fafaf9;
+  --card: #292524;
+  --card-foreground: #fafaf9;
+  --popover: #292524;
+  --popover-foreground: #fafaf9;
+  --primary: #a78bfa;
+  --primary-foreground: #1c1917;
+  --secondary: #34d399;
+  --secondary-foreground: #1c1917;
+  --muted: #44403c;
+  --muted-foreground: #a8a29e;
+  --accent: #3b0764;
+  --accent-foreground: #f5f3ff;
+  --destructive: #f87171;
+  --border: #44403c;
+  --input: #44403c;
+  --ring: #a78bfa;
+  --chart-1: #a78bfa;
+  --chart-2: #34d399;
+  --chart-3: #fbbf24;
+  --chart-4: #22d3ee;
+  --chart-5: #f472b6;
+  --sidebar: #292524;
+  --sidebar-foreground: #fafaf9;
+  --sidebar-primary: #a78bfa;
+  --sidebar-primary-foreground: #1c1917;
+  --sidebar-accent: #3b0764;
+  --sidebar-accent-foreground: #f5f3ff;
+  --sidebar-border: #44403c;
+  --sidebar-ring: #a78bfa;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+  }
+}
