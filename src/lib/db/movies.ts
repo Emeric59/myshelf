@@ -73,8 +73,8 @@ export async function cacheMovie(db: D1Database, movie: Movie): Promise<void> {
   await db
     .prepare(`
       INSERT OR REPLACE INTO movies
-        (id, title, director, poster_url, backdrop_url, description, runtime, release_date, genres, tmdb_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (id, title, director, poster_url, backdrop_url, description, runtime, release_date, genres)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
     .bind(
       movie.id,
@@ -85,8 +85,7 @@ export async function cacheMovie(db: D1Database, movie: Movie): Promise<void> {
       movie.description || null,
       movie.runtime || null,
       movie.release_date || null,
-      movie.genres ? JSON.stringify(movie.genres) : null,
-      movie.tmdb_id || movie.id
+      movie.genres ? JSON.stringify(movie.genres) : null
     )
     .run()
 }

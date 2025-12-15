@@ -73,8 +73,8 @@ export async function cacheBook(db: D1Database, book: Book): Promise<void> {
   await db
     .prepare(`
       INSERT OR REPLACE INTO books
-        (id, title, author, cover_url, description, page_count, published_date, genres, language, open_library_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (id, title, author, cover_url, description, page_count, published_date, genres, language)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
     .bind(
       book.id,
@@ -85,8 +85,7 @@ export async function cacheBook(db: D1Database, book: Book): Promise<void> {
       book.page_count || null,
       book.published_date || null,
       book.genres ? JSON.stringify(book.genres) : null,
-      book.language || null,
-      book.open_library_id || book.id
+      book.language || null
     )
     .run()
 }

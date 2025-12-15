@@ -12,14 +12,14 @@ export async function getUserShows(db: D1Database): Promise<(UserShow & Show)[]>
       SELECT
         us.*,
         s.title,
-        s.creator,
+        s.creators as creator,
         s.poster_url,
         s.backdrop_url,
         s.description,
         s.first_air_date,
         s.genres,
-        s.total_seasons,
-        s.total_episodes,
+        s.seasons_count as total_seasons,
+        s.episodes_count as total_episodes,
         s.status as show_status
       FROM user_shows us
       JOIN shows s ON us.show_id = s.id
@@ -40,14 +40,14 @@ export async function getUserShow(
       SELECT
         us.*,
         s.title,
-        s.creator,
+        s.creators as creator,
         s.poster_url,
         s.backdrop_url,
         s.description,
         s.first_air_date,
         s.genres,
-        s.total_seasons,
-        s.total_episodes,
+        s.seasons_count as total_seasons,
+        s.episodes_count as total_episodes,
         s.status as show_status
       FROM user_shows us
       JOIN shows s ON us.show_id = s.id
@@ -77,8 +77,8 @@ export async function cacheShow(db: D1Database, show: Show): Promise<void> {
   await db
     .prepare(`
       INSERT OR REPLACE INTO shows
-        (id, title, creator, poster_url, backdrop_url, description, first_air_date, genres, total_seasons, total_episodes, status, tmdb_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (id, title, creators, poster_url, backdrop_url, description, first_air_date, genres, seasons_count, episodes_count, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
     .bind(
       show.id,
@@ -91,8 +91,7 @@ export async function cacheShow(db: D1Database, show: Show): Promise<void> {
       show.genres ? JSON.stringify(show.genres) : null,
       show.total_seasons || null,
       show.total_episodes || null,
-      show.status || null,
-      show.tmdb_id || show.id
+      show.status || null
     )
     .run()
 }

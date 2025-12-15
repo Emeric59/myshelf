@@ -111,9 +111,12 @@ export async function getStats(db: D1Database): Promise<StatsData> {
       AND finished_at >= ? AND finished_at <= ?
     `).bind(yearStart, yearEnd).first(),
 
-    // Goals for current year
+    // Goals for current year (pivot the rows)
     db.prepare(`
-      SELECT books_goal, movies_goal, shows_goal
+      SELECT
+        MAX(CASE WHEN media_type = 'book' THEN target END) as books_goal,
+        MAX(CASE WHEN media_type = 'movie' THEN target END) as movies_goal,
+        MAX(CASE WHEN media_type = 'show' THEN target END) as shows_goal
       FROM goals
       WHERE year = ?
     `).bind(currentYear).first(),
@@ -168,7 +171,14 @@ export async function getGoals(
   year: number
 ): Promise<{ books: number; movies: number; shows: number }> {
   const goals = await db
-    .prepare('SELECT books_goal, movies_goal, shows_goal FROM goals WHERE year = ?')
+    .prepare(`
+      SELECT
+        MAX(CASE WHEN media_type = 'book' THEN target END) as books_goal,
+        MAX(CASE WHEN media_type = 'movie' THEN target END) as movies_goal,
+        MAX(CASE WHEN media_type = 'show' THEN target END) as shows_goal
+      FROM goals
+      WHERE year = ?
+    `)
     .bind(year)
     .first()
 
@@ -189,25 +199,38 @@ export async function updateGoals(
   year: number,
   goals: { books?: number; movies?: number; shows?: number }
 ): Promise<void> {
-  const now = new Date().toISOString()
+  // Insert or update each goal type separately
+  const updates: Promise<unknown>[] = []
 
-  await db
-    .prepare(`
-      INSERT INTO goals (year, books_goal, movies_goal, shows_goal, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?)
-      ON CONFLICT(year) DO UPDATE SET
-        books_goal = COALESCE(excluded.books_goal, goals.books_goal),
-        movies_goal = COALESCE(excluded.movies_goal, goals.movies_goal),
-        shows_goal = COALESCE(excluded.shows_goal, goals.shows_goal),
-        updated_at = excluded.updated_at
-    `)
-    .bind(
-      year,
-      goals.books ?? null,
-      goals.movies ?? null,
-      goals.shows ?? null,
-      now,
-      now
+  if (goals.books !== undefined) {
+    updates.push(
+      db.prepare(`
+        INSERT INTO goals (year, media_type, target)
+        VALUES (?, 'book', ?)
+        ON CONFLICT(year, media_type) DO UPDATE SET target = excluded.target
+      `).bind(year, goals.books).run()
     )
-    .run()
+  }
+
+  if (goals.movies !== undefined) {
+    updates.push(
+      db.prepare(`
+        INSERT INTO goals (year, media_type, target)
+        VALUES (?, 'movie', ?)
+        ON CONFLICT(year, media_type) DO UPDATE SET target = excluded.target
+      `).bind(year, goals.movies).run()
+    )
+  }
+
+  if (goals.shows !== undefined) {
+    updates.push(
+      db.prepare(`
+        INSERT INTO goals (year, media_type, target)
+        VALUES (?, 'show', ?)
+        ON CONFLICT(year, media_type) DO UPDATE SET target = excluded.target
+      `).bind(year, goals.shows).run()
+    )
+  }
+
+  await Promise.all(updates)
 }
