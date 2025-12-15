@@ -21,7 +21,7 @@
 | Backend | Cloudflare Workers (API routes) | Serverless, pas cher |
 | Database | Cloudflare D1 (SQLite) | Simple, gratuit |
 | Vectors | Cloudflare Vectorize | Embeddings pour recos (optionnel) |
-| IA | Google Gemini 2.0 Flash | Bon rapport qualité/prix |
+| IA | Google Gemini 2.5 Flash | Bon rapport qualité/prix + thinking mode |
 | Déploiement | Cloudflare Pages | Auto-deploy depuis Git |
 
 ## Commandes
@@ -174,8 +174,8 @@ src/
 - Header: `Authorization: Bearer {TMDB_API_KEY}`
 
 ### Gemini (IA)
-- SDK: `@google/generative-ai`
-- Modèle: `gemini-2.0-flash`
+- SDK: `@google/genai`
+- Modèle: `gemini-2.5-flash` (avec thinking mode activé)
 
 ## Informations Cloudflare
 
