@@ -41,12 +41,15 @@ export async function GET(request: NextRequest) {
               image_url: book.coverUrl,
               year: book.publishedDate?.slice(0, 4),
               rating: undefined,
-              // Enrichment data from Hardcover
+              // Enrichment data
+              description: book.description,
+              pageCount: book.pageCount,
               genres: book.genres,
               tropes: book.tropes,
               moods: book.moods,
               contentWarnings: book.contentWarnings,
               seriesName: book.seriesName,
+              seriesPosition: book.seriesPosition,
               sources: book.sources,
             }))
             results.push(...bookResults)

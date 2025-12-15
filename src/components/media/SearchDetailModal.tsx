@@ -96,14 +96,14 @@ export function SearchDetailModal({
                     {result.subtitle}
                   </p>
                 )}
-                {result.year && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {result.year}
-                  </p>
-                )}
+                <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
+                  {result.year && <span>{result.year}</span>}
+                  {result.pageCount && <span>{result.pageCount} pages</span>}
+                </div>
                 {result.seriesName && (
                   <p className="text-sm text-primary font-medium mt-2">
                     {result.seriesName}
+                    {result.seriesPosition && ` #${result.seriesPosition}`}
                   </p>
                 )}
 
@@ -115,6 +115,16 @@ export function SearchDetailModal({
                 )}
               </div>
             </div>
+
+            {/* Description */}
+            {result.description && (
+              <div>
+                <h4 className="text-sm font-medium mb-2">Synopsis</h4>
+                <p className="text-sm text-muted-foreground line-clamp-4">
+                  {result.description}
+                </p>
+              </div>
+            )}
 
             {/* Genres */}
             {result.genres && result.genres.length > 0 && (

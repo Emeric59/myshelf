@@ -4,7 +4,7 @@
  */
 
 import { searchGoogleBooks, GoogleBookResult } from "./googleBooks"
-import { searchHardcover, getHardcoverBookDetails, HardcoverBookResult } from "./hardcover"
+import { searchHardcover, getHardcoverBookDetails, getHardcoverBookByTitleAuthor, HardcoverBookResult } from "./hardcover"
 import { searchBooks as searchOpenLibrary, normalizeSearchResult } from "./openLibrary"
 
 export type BookSource = "google" | "openlibrary" | "hardcover"
@@ -78,15 +78,21 @@ export async function searchBooksMultiSource(query: string): Promise<UnifiedBook
   const hardcover =
     hardcoverResults.status === "fulfilled" ? hardcoverResults.value : []
 
+  // Log results for debugging
+  console.log(`[BookSearch] Query: "${query}"`)
+  console.log(`[BookSearch] Google Books: ${google.length} results`)
+  console.log(`[BookSearch] Open Library: ${openLibrary.length} results`)
+  console.log(`[BookSearch] Hardcover: ${hardcover.length} results`)
+
   // Log any errors for debugging
   if (googleResults.status === "rejected") {
-    console.warn("Google Books search failed:", googleResults.reason)
+    console.error("Google Books search failed:", googleResults.reason)
   }
   if (openLibraryResults.status === "rejected") {
-    console.warn("Open Library search failed:", openLibraryResults.reason)
+    console.error("Open Library search failed:", openLibraryResults.reason)
   }
   if (hardcoverResults.status === "rejected") {
-    console.warn("Hardcover search failed:", hardcoverResults.reason)
+    console.error("Hardcover search failed:", hardcoverResults.reason)
   }
 
   // Merge and deduplicate
@@ -309,36 +315,70 @@ function mergeBookResults(
 
 /**
  * Enrich books with detailed Hardcover data (tropes, moods)
- * Only enriches books that have a Hardcover slug but missing tropes
+ * Enriches books that have a Hardcover slug OR tries to find them by title/author
  */
 async function enrichWithHardcoverDetails(
   books: UnifiedBookResult[]
 ): Promise<UnifiedBookResult[]> {
   const enrichPromises = books.map(async (book) => {
-    // Only enrich if we have a slug and missing tropes data
-    if (book.hardcoverSlug && book.tropes.length === 0) {
-      try {
+    try {
+      // If we have a slug, fetch detailed info
+      if (book.hardcoverSlug) {
         const details = await getHardcoverBookDetails(book.hardcoverSlug)
         if (details) {
-          book.tropes = details.tropes
-          book.moods = details.moods
-          book.contentWarnings = details.contentWarnings
-          if (details.genres.length > 0) {
-            book.genres = [...new Set([...book.genres, ...details.genres])]
-          }
-          if (details.seriesName && !book.seriesName) {
-            book.seriesName = details.seriesName
-            book.seriesPosition = details.seriesPosition
-          }
+          console.log(`[Enrich] Got details for ${book.title} from slug`)
+          applyHardcoverDetails(book, details)
         }
-      } catch (error) {
-        console.warn(`Failed to enrich ${book.title}:`, error)
       }
+      // If we don't have tropes yet, try to find book on Hardcover
+      else if (book.tropes.length === 0 && book.moods.length === 0) {
+        const author = book.authors[0]
+        const details = await getHardcoverBookByTitleAuthor(book.title, author)
+        if (details) {
+          console.log(`[Enrich] Found ${book.title} on Hardcover by title search`)
+          book.hardcoverId = details.id
+          book.hardcoverSlug = details.slug
+          if (!book.sources.includes("hardcover")) {
+            book.sources.push("hardcover")
+          }
+          applyHardcoverDetails(book, details)
+        }
+      }
+    } catch (error) {
+      console.warn(`Failed to enrich ${book.title}:`, error)
     }
     return book
   })
 
   return Promise.all(enrichPromises)
+}
+
+/**
+ * Apply Hardcover details to a book
+ */
+function applyHardcoverDetails(book: UnifiedBookResult, details: HardcoverBookResult): void {
+  if (details.tropes.length > 0) {
+    book.tropes = details.tropes
+  }
+  if (details.moods.length > 0) {
+    book.moods = details.moods
+  }
+  if (details.contentWarnings.length > 0) {
+    book.contentWarnings = details.contentWarnings
+  }
+  if (details.genres.length > 0) {
+    book.genres = [...new Set([...book.genres, ...details.genres])]
+  }
+  if (details.seriesName && !book.seriesName) {
+    book.seriesName = details.seriesName
+    book.seriesPosition = details.seriesPosition
+  }
+  if (details.description && !book.description) {
+    book.description = details.description
+  }
+  if (details.pages && !book.pageCount) {
+    book.pageCount = details.pages
+  }
 }
 
 /**

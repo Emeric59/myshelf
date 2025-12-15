@@ -253,11 +253,14 @@ export interface SearchResult {
   in_library?: boolean
   library_status?: BookStatus | MovieStatus | ShowStatus
   // Book-specific enrichment data
+  description?: string
+  pageCount?: number
   genres?: string[]
   tropes?: string[]
   moods?: string[]
   contentWarnings?: string[]
   seriesName?: string
+  seriesPosition?: number
   sources?: string[]
 }
 
