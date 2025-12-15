@@ -232,15 +232,28 @@ export async function getHardcoverBookByTitleAuthor(
 }
 
 /**
+ * Capitalize first letter of a string
+ */
+function capitalize(str: string): string {
+  if (!str) return str
+  return str.charAt(0).toUpperCase() + str.slice(1)
+}
+
+/**
  * Extract string from tag (handles both string and object formats)
  * Hardcover API can return tags as strings OR as objects {tag, tagSlug, category, ...}
+ * Always capitalizes the first letter for consistency
  */
 function extractTagString(tag: unknown): string {
-  if (typeof tag === "string") return tag
-  if (tag && typeof tag === "object" && "tag" in tag) {
-    return (tag as { tag: string }).tag
+  let result: string
+  if (typeof tag === "string") {
+    result = tag
+  } else if (tag && typeof tag === "object" && "tag" in tag) {
+    result = (tag as { tag: string }).tag
+  } else {
+    result = String(tag)
   }
-  return String(tag)
+  return capitalize(result)
 }
 
 /**

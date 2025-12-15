@@ -13,13 +13,24 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import type { SearchResult } from "@/types"
 
+// Helper to capitalize first letter
+function capitalize(str: string): string {
+  if (!str) return str
+  return str.charAt(0).toUpperCase() + str.slice(1)
+}
+
 // Helper to ensure tag is a string (handles both string and object formats)
+// Always capitalizes the first letter for consistency
 function getTagString(tag: unknown): string {
-  if (typeof tag === "string") return tag
-  if (tag && typeof tag === "object" && "tag" in tag) {
-    return (tag as { tag: string }).tag
+  let result: string
+  if (typeof tag === "string") {
+    result = tag
+  } else if (tag && typeof tag === "object" && "tag" in tag) {
+    result = (tag as { tag: string }).tag
+  } else {
+    result = String(tag)
   }
-  return String(tag)
+  return capitalize(result)
 }
 
 interface SearchDetailModalProps {
