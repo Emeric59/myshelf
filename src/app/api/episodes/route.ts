@@ -74,13 +74,18 @@ export async function GET(request: NextRequest) {
         }, { status: 500 })
       }
 
-      // Cache the season info
+      // Cache the season info (convert undefined to null for D1)
       await db
         .prepare(
           `INSERT OR REPLACE INTO show_seasons (show_id, season_number, name, episode_count, updated_at)
            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`
         )
-        .bind(showId, season.season_number, season.name, season.episode_count)
+        .bind(
+          showId,
+          season.season_number,
+          season.name ?? null,
+          season.episode_count ?? 0
+        )
         .run()
 
       // Mark which episodes are watched
