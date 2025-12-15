@@ -5,11 +5,10 @@
 ## Statut actuel
 
 **Phase :** Phase 9 - Améliorations UX et features complémentaires
-**Dernière mise à jour :** 2025-12-15 (session 2)
+**Dernière mise à jour :** 2025-12-15 (session 3)
 **Build :** OK
 **Déployé :** https://myshelf-d69.pages.dev
-**État DB prod :** Vraies données (10 livres, 10 films, 10 séries avec IDs vérifiés)
-**Migration en attente :** 005_add_descriptions.sql (auth Cloudflare expirée)
+**État DB prod :** Vraies données avec descriptions en français (10 livres, 10 films, 10 séries)
 
 ---
 
@@ -108,7 +107,8 @@
 - [x] **Notes personnelles** : label "privé" ajouté (non utilisé par l'IA)
 - [x] **Fix overflow mobile** : CSS global pour empêcher le scroll horizontal
 - [x] **QUESTIONS.md** : fichier pour questions en attente (référencé dans CLAUDE.md)
-- [ ] Descriptions/synopsis pour médias (migration 005 créée, à appliquer)
+- [x] **Descriptions/synopsis** : migration 005 + 006 (descriptions en français)
+- [x] **Rankings complet** : affiche tous les groupes d'étoiles (1-5) même vides
 - [ ] Export des données (optionnel)
 - [ ] Thème clair/sombre (optionnel)
 
@@ -122,9 +122,10 @@
 | `002_seed_tropes.sql` | 54 tropes + providers streaming | ✅ |
 | `003_reset_for_real_data.sql` | Reset des données (utilitaire) | ✅ |
 | `004_real_data_seed.sql` | Vraies données (10 livres, 10 films, 10 séries) | ✅ |
-| `005_add_descriptions.sql` | Descriptions/synopsis pour tous les médias | ⏳ (à appliquer) |
+| `005_add_descriptions.sql` | Descriptions/synopsis (anglais) | ✅ |
+| `006_french_descriptions.sql` | Descriptions traduites en français | ✅ |
 
-> **Note :** La DB contient des données réelles avec des IDs vérifiés via les APIs officielles (Open Library + TMDB) le 2025-12-15.
+> **Note :** La DB contient des données réelles avec descriptions en français, IDs vérifiés via APIs officielles (Open Library + TMDB).
 
 ---
 
