@@ -167,15 +167,15 @@ export function MediaCard({
           {/* Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <h4 className="font-medium truncate">{title}</h4>
+              <div className="min-w-0 flex-1">
+                <h4 className="font-medium line-clamp-2 leading-tight">{title}</h4>
                 {subtitle && (
-                  <p className="text-sm text-muted-foreground truncate">
+                  <p className="text-sm text-muted-foreground truncate mt-0.5">
                     {subtitle}
                   </p>
                 )}
               </div>
-              <Icon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <Icon className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
             </div>
 
             <div className="flex items-center gap-2 mt-1">
