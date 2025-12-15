@@ -8,7 +8,7 @@
 **Dernière mise à jour :** 2025-12-15
 **Build :** OK
 **Déployé :** https://myshelf-d69.pages.dev
-**État DB prod :** Données réelles seedées (vrais IDs Open Library + TMDB)
+**État DB prod :** Vide (prêt pour les vraies données utilisateur)
 
 ---
 
@@ -52,7 +52,7 @@
 - [ ] Import BookNode / TV Time (reporté - optionnel)
 
 ### Phase 4 : IA et recommandations - TERMINÉE
-- [x] Intégration Gemini 2.0 Flash
+- [x] Intégration Gemini 2.5 Flash (avec thinking mode)
 - [x] Client IA (`src/lib/ai/gemini.ts`)
 - [x] API route `/api/recommendations/ask`
 - [x] Interface conversationnelle connectée
@@ -85,15 +85,11 @@
 - [x] Composant Progress (`src/components/ui/progress.tsx`)
 - [ ] Badges streaming sur les résultats de recherche - optionnel
 
-### Phase 8 : Polish et données réelles - TERMINÉE
+### Phase 8 : Polish et infrastructure - TERMINÉE
 - [x] Dashboard dynamique (stats réelles depuis APIs)
 - [x] API `/api/books?id=xxx` pour récupérer un livre spécifique
 - [x] Tropes seedés en production (54 tropes)
-- [x] Données réelles avec vrais IDs (migration 004_real_data_seed.sql)
-  - 10 livres (vrais IDs Open Library)
-  - 10 films (vrais IDs TMDB)
-  - 10 séries (vrais IDs TMDB)
-  - Reviews, highlights, objectifs 2025
+- [x] Infrastructure prête pour les vraies données utilisateur
 
 ### Phase 9 : Améliorations UX - EN COURS
 - [x] Fix API movies/shows pour récupération média unique (`?id=xxx`)
@@ -104,6 +100,9 @@
 - [x] Page `/stats/rankings` - Top 10 par catégorie
 - [x] Recommandations par mood connectées à l'IA
 - [x] Dashboard enrichi avec section "En cours"
+- [x] Filtre par type de média (Livres/Films/Séries) sur les recommandations
+- [x] Fix images Next.js pour Cloudflare Pages (`unoptimized: true`)
+- [x] Nettoyage migrations et reset DB pour vraies données
 - [ ] Export des données (optionnel)
 - [ ] Thème clair/sombre (optionnel)
 
@@ -113,10 +112,11 @@
 
 | Fichier | Description | Appliquée en prod |
 |---------|-------------|-------------------|
-| `001_initial.sql` | Schéma complet | ✅ |
+| `001_initial.sql` | Schéma complet (toutes les tables) | ✅ |
 | `002_seed_tropes.sql` | 54 tropes + providers streaming | ✅ |
-| `003_seed_test_data.sql` | Données fictives (OBSOLÈTE) | ❌ Remplacé |
-| `004_real_data_seed.sql` | Données réelles avec vrais IDs | ✅ |
+| `003_reset_for_real_data.sql` | Reset des données fictives | ✅ |
+
+> **Note :** La DB est vide et prête pour les vraies données utilisateur. Les tropes et le schéma sont en place.
 
 ---
 
@@ -133,7 +133,7 @@
 | `/api/stats` | GET | Statistiques globales |
 | `/api/goals` | GET, POST | Objectifs annuels |
 | `/api/highlights` | GET, POST, PATCH, DELETE | Passages favoris |
-| `/api/recommendations/ask` | POST | Recommandations IA (Gemini 2.0 Flash) |
+| `/api/recommendations/ask` | POST | Recommandations IA (Gemini 2.5 Flash) |
 | `/api/subscriptions` | GET, POST | Abonnements streaming |
 
 ---
@@ -310,14 +310,14 @@ GEMINI_API_KEY=xxx
 6. **Composant manquant** : `Progress` créé
 7. **Edge runtime** : Ajouté aux pages `[id]`
 8. **Dashboard stats** : Rendu dynamique (fetch APIs)
-9. **Données fictives** : Remplacées par vrais IDs Open Library + TMDB
-10. **Tropes vides** : Migration seedée en production
-11. **API movies/shows GET** : Ajout support paramètre `?id=xxx` pour média unique
-12. **Hook useTropes** : Simplification (préférences déjà fusionnées par API)
-13. **Navigation Biblio** : Pointe vers `/library` au lieu de `/books`
-14. **Page d'accueil** : Utilise maintenant le composant BottomNav partagé
-15. **Tropes SQL** : Colonne `name_fr` inexistante retirée de la requête
-16. **Images non chargées** : Ajout `unoptimized: true` dans next.config.ts (Cloudflare Pages)
-17. **Rankings 404** : IDs de navigation corrigés (`book_id` au lieu de `id` row)
-18. **Mood recommendations** : Paramètre API corrigé (`query` au lieu de `message`)
-19. **Ajout depuis recommandations** : Type de recherche corrigé (singulier au lieu de pluriel)
+9. **Tropes vides** : Migration seedée en production
+10. **API movies/shows GET** : Ajout support paramètre `?id=xxx` pour média unique
+11. **Hook useTropes** : Simplification (préférences déjà fusionnées par API)
+12. **Navigation Biblio** : Pointe vers `/library` au lieu de `/books`
+13. **Page d'accueil** : Utilise maintenant le composant BottomNav partagé
+14. **Tropes SQL** : Colonne `name_fr` inexistante retirée de la requête
+15. **Images non chargées** : Ajout `unoptimized: true` dans next.config.ts (Cloudflare Pages)
+16. **Rankings 404** : IDs de navigation corrigés (`book_id` au lieu de `id` row)
+17. **Mood recommendations** : Paramètre API corrigé (`query` au lieu de `message`)
+18. **Ajout depuis recommandations** : Type de recherche corrigé (singulier au lieu de pluriel)
+19. **Migrations nettoyées** : Suppression des migrations obsolètes, reset DB pour vraies données
