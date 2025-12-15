@@ -4,10 +4,10 @@
 
 ## Statut actuel
 
-**Phase :** Phase 4 - IA et recommandations (en cours)
+**Phase :** Phase 7 - Finitions et polish
 **Dernière mise à jour :** 2025-12-15
 **Build :** OK
-**Prochaine tâche :** PWA et déploiement
+**Déployé :** https://myshelf-d69.pages.dev
 
 ---
 
@@ -67,14 +67,25 @@
 - [x] Migrations D1 en production
 - [x] Variables d'environnement configurées (TMDB_API_KEY, GEMINI_API_KEY)
 
-### Phase 6 : Tests et qualité - EN COURS
+### Phase 6 : Tests et qualité - TERMINÉE
 - [x] Installation Vitest et dépendances de test
 - [x] Configuration vitest.config.ts
 - [x] Mock D1 pour tests unitaires
 - [x] Tests unitaires DB helpers (books, movies, shows, stats, highlights)
 - [x] Tests unitaires API clients (Open Library, TMDB, Gemini)
-- [ ] Tests d'intégration plus avancés (avec miniflare)
-- [ ] Tests E2E (optionnel)
+- [ ] Tests d'intégration plus avancés (avec miniflare) - optionnel
+- [ ] Tests E2E - optionnel
+
+### Phase 7 : Fonctionnalités manquantes - TERMINÉE
+- [x] Pages de détail médias (`/books/[id]`, `/movies/[id]`, `/shows/[id]`)
+- [x] Système de review/feedback avec UI :
+  - Aspects appréciés (personnages, romance, worldbuilding, etc.)
+  - Émotions ressenties (m'a fait pleurer, coup de coeur, etc.)
+  - Commentaires personnels
+- [x] Bouton "Ajouter" fonctionnel dans les recommandations IA
+- [x] Gestion des abonnements streaming connectée à la DB
+- [x] API route `/api/subscriptions`
+- [ ] Badges streaming sur les résultats de recherche - optionnel
 
 ---
 
@@ -92,6 +103,7 @@
 | `/api/goals` | GET, POST | Objectifs annuels |
 | `/api/highlights` | GET, POST, PATCH, DELETE | Passages favoris |
 | `/api/recommendations/ask` | POST | Recommandations IA (Gemini 2.5 Flash) |
+| `/api/subscriptions` | GET, POST | Abonnements streaming |
 
 ---
 
