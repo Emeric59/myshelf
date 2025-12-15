@@ -157,10 +157,10 @@ export default function RecommendationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-24 overflow-x-hidden">
       <Header title="Recommandations" showBack />
 
-      <main className="container px-4 py-6">
+      <main className="container px-4 py-6 overflow-x-hidden">
         <PageHeader
           title="Pour toi"
           description="Des suggestions personnalisées basées sur tes goûts"
@@ -200,7 +200,7 @@ export default function RecommendationsPage() {
           <h3 className="font-display text-lg font-medium mb-3">
             Quel type de média ?
           </h3>
-          <div className="flex gap-2">
+          <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
             {typeFilters.map((filter) => {
               const Icon = filter.icon
               return (
@@ -208,7 +208,7 @@ export default function RecommendationsPage() {
                   key={filter.value}
                   onClick={() => setSelectedType(filter.value)}
                   className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-full border text-sm transition-all",
+                    "flex items-center gap-2 px-4 py-2 rounded-full border text-sm transition-all whitespace-nowrap flex-shrink-0",
                     selectedType === filter.value
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-border hover:border-primary/50"

@@ -8,7 +8,7 @@
 **Dernière mise à jour :** 2025-12-15
 **Build :** OK
 **Déployé :** https://myshelf-d69.pages.dev
-**État DB prod :** Vide (prêt pour les vraies données utilisateur)
+**État DB prod :** Vraies données (10 livres, 10 films, 10 séries avec IDs vérifiés)
 
 ---
 
@@ -114,9 +114,10 @@
 |---------|-------------|-------------------|
 | `001_initial.sql` | Schéma complet (toutes les tables) | ✅ |
 | `002_seed_tropes.sql` | 54 tropes + providers streaming | ✅ |
-| `003_reset_for_real_data.sql` | Reset des données fictives | ✅ |
+| `003_reset_for_real_data.sql` | Reset des données (utilitaire) | ✅ |
+| `004_real_data_seed.sql` | Vraies données (10 livres, 10 films, 10 séries) | ✅ |
 
-> **Note :** La DB est vide et prête pour les vraies données utilisateur. Les tropes et le schéma sont en place.
+> **Note :** La DB contient des données réelles avec des IDs vérifiés via les APIs officielles (Open Library + TMDB) le 2025-12-15.
 
 ---
 
