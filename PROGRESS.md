@@ -4,7 +4,7 @@
 
 ## Statut actuel
 
-**Phase :** Phase 8 - App fonctionnelle complète
+**Phase :** Phase 9 - Améliorations UX et features complémentaires
 **Dernière mise à jour :** 2025-12-15
 **Build :** OK
 **Déployé :** https://myshelf-d69.pages.dev
@@ -95,6 +95,18 @@
   - 10 séries (vrais IDs TMDB)
   - Reviews, highlights, objectifs 2025
 
+### Phase 9 : Améliorations UX - EN COURS
+- [x] Fix API movies/shows pour récupération média unique (`?id=xxx`)
+- [x] Ajout fonctions `updateMovieRating` et `updateShowRating`
+- [x] Page `/library` comme hub central (livres, films, séries)
+- [x] BottomNav pointe vers `/library` au lieu de `/books`
+- [x] Fix hook `useTropes` (préférences déjà fusionnées par API)
+- [x] Page `/stats/rankings` - Top 10 par catégorie
+- [x] Recommandations par mood connectées à l'IA
+- [x] Dashboard enrichi avec section "En cours"
+- [ ] Export des données (optionnel)
+- [ ] Thème clair/sombre (optionnel)
+
 ---
 
 ## Migrations D1
@@ -145,7 +157,8 @@
 ```
 src/
 ├── app/
-│   ├── page.tsx                    # Dashboard (dynamique)
+│   ├── page.tsx                    # Dashboard (section "En cours")
+│   ├── library/page.tsx            # Hub central bibliothèque
 │   ├── books/
 │   │   ├── page.tsx                # Bibliothèque (useBooks)
 │   │   └── [id]/page.tsx           # Détail livre (edge runtime)
@@ -158,11 +171,12 @@ src/
 │   ├── search/page.tsx             # Recherche unifiée
 │   ├── highlights/page.tsx         # Passages favoris
 │   ├── recommendations/
-│   │   ├── page.tsx                # Recommandations
+│   │   ├── page.tsx                # Recommandations par mood
 │   │   └── ask/page.tsx            # Chat IA
 │   ├── stats/
 │   │   ├── page.tsx                # Statistiques
-│   │   └── goals/page.tsx          # Objectifs
+│   │   ├── goals/page.tsx          # Objectifs
+│   │   └── rankings/page.tsx       # Top 10 par catégorie
 │   ├── settings/
 │   │   ├── page.tsx                # Paramètres
 │   │   ├── tropes/page.tsx         # Tropes
@@ -298,3 +312,7 @@ GEMINI_API_KEY=xxx
 8. **Dashboard stats** : Rendu dynamique (fetch APIs)
 9. **Données fictives** : Remplacées par vrais IDs Open Library + TMDB
 10. **Tropes vides** : Migration seedée en production
+11. **API movies/shows GET** : Ajout support paramètre `?id=xxx` pour média unique
+12. **Hook useTropes** : Simplification (préférences déjà fusionnées par API)
+13. **Navigation Biblio** : Pointe vers `/library` au lieu de `/books`
+14. **Page d'accueil** : Utilise maintenant le composant BottomNav partagé
