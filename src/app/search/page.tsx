@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation"
 import { Search, Book, Film, Tv, Loader2, X } from "lucide-react"
 import { Header } from "@/components/layout"
 import { BottomNav } from "@/components/layout"
-import { MediaCard } from "@/components/media"
+import { MediaCard, SearchDetailModal } from "@/components/media"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
@@ -29,6 +29,11 @@ function SearchContent() {
   const [results, setResults] = useState<SearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
+
+  // Modal state
+  const [selectedResult, setSelectedResult] = useState<SearchResult | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isAdding, setIsAdding] = useState(false)
 
   const performSearch = useCallback(async () => {
     if (!query.trim()) {
@@ -70,15 +75,42 @@ function SearchContent() {
     return () => clearTimeout(timer)
   }, [query, typeFilter, performSearch])
 
+  // Open detail modal
+  const openDetailModal = (result: SearchResult) => {
+    setSelectedResult(result)
+    setIsModalOpen(true)
+  }
+
   const handleAddToLibrary = async (result: SearchResult) => {
+    setIsAdding(true)
     try {
+      // For books, send all consolidated data
+      const payload = result.type === "book"
+        ? {
+            id: result.id,
+            status: "to_read",
+            bookData: {
+              id: result.id,
+              title: result.title,
+              authors: result.subtitle ? [result.subtitle] : [],
+              coverUrl: result.image_url,
+              publishedDate: result.year,
+              genres: result.genres,
+              tropes: result.tropes,
+              moods: result.moods,
+              contentWarnings: result.contentWarnings,
+              seriesName: result.seriesName,
+            },
+          }
+        : {
+            id: result.id,
+            status: "to_watch",
+          }
+
       const response = await fetch(`/api/${result.type}s`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: result.id,
-          status: result.type === "book" ? "to_read" : "to_watch",
-        }),
+        body: JSON.stringify(payload),
       })
 
       if (response.ok) {
@@ -88,9 +120,18 @@ function SearchContent() {
             r.id === result.id ? { ...r, in_library: true } : r
           )
         )
+        // Also update selected result if it's the same
+        if (selectedResult?.id === result.id) {
+          setSelectedResult({ ...result, in_library: true })
+        }
+      } else {
+        const error = await response.json()
+        console.error("Failed to add:", error)
       }
     } catch (error) {
       console.error("Error adding to library:", error)
+    } finally {
+      setIsAdding(false)
     }
   }
 
@@ -191,7 +232,7 @@ function SearchContent() {
                               seriesName={result.seriesName}
                               sources={result.sources}
                               inLibrary={result.in_library}
-                              onAdd={() => handleAddToLibrary(result)}
+                              onAdd={() => openDetailModal(result)}
                               variant="search"
                             />
                           ))}
@@ -217,7 +258,7 @@ function SearchContent() {
                               rating={result.rating}
                               year={result.year}
                               inLibrary={result.in_library}
-                              onAdd={() => handleAddToLibrary(result)}
+                              onAdd={() => openDetailModal(result)}
                               variant="search"
                             />
                           ))}
@@ -243,7 +284,7 @@ function SearchContent() {
                               rating={result.rating}
                               year={result.year}
                               inLibrary={result.in_library}
-                              onAdd={() => handleAddToLibrary(result)}
+                              onAdd={() => openDetailModal(result)}
                               variant="search"
                             />
                           ))}
@@ -270,7 +311,7 @@ function SearchContent() {
                         seriesName={result.seriesName}
                         sources={result.sources}
                         inLibrary={result.in_library}
-                        onAdd={() => handleAddToLibrary(result)}
+                        onAdd={() => openDetailModal(result)}
                         variant="search"
                       />
                     ))}
@@ -305,6 +346,15 @@ function SearchContent() {
           </div>
         )}
       </main>
+
+      {/* Detail modal */}
+      <SearchDetailModal
+        result={selectedResult}
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        onAdd={handleAddToLibrary}
+        isAdding={isAdding}
+      />
 
       <BottomNav />
     </div>

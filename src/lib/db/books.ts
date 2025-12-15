@@ -18,7 +18,11 @@ export async function getUserBooks(db: D1Database): Promise<(UserBook & Book)[]>
         b.page_count,
         b.published_date,
         b.genres,
-        b.language
+        b.language,
+        b.series_name,
+        b.tropes,
+        b.moods,
+        b.content_warnings
       FROM user_books ub
       JOIN books b ON ub.book_id = b.id
       ORDER BY ub.updated_at DESC
@@ -44,7 +48,11 @@ export async function getUserBook(
         b.page_count,
         b.published_date,
         b.genres,
-        b.language
+        b.language,
+        b.series_name,
+        b.tropes,
+        b.moods,
+        b.content_warnings
       FROM user_books ub
       JOIN books b ON ub.book_id = b.id
       WHERE ub.book_id = ?
@@ -73,19 +81,28 @@ export async function cacheBook(db: D1Database, book: Book): Promise<void> {
   await db
     .prepare(`
       INSERT OR REPLACE INTO books
-        (id, title, author, cover_url, description, page_count, published_date, genres, language)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (id, title, author, cover_url, description, page_count, published_date,
+         genres, language, series_name, isbn_13,
+         google_books_id, hardcover_slug, tropes, moods, content_warnings)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
     .bind(
       book.id,
       book.title,
-      book.author,
+      book.author || null,
       book.cover_url || null,
       book.description || null,
       book.page_count || null,
       book.published_date || null,
       book.genres ? JSON.stringify(book.genres) : null,
-      book.language || null
+      book.language || null,
+      book.series_name || null,
+      book.isbn_13 || null,
+      book.google_books_id || null,
+      book.hardcover_slug || null,
+      book.tropes ? JSON.stringify(book.tropes) : null,
+      book.moods ? JSON.stringify(book.moods) : null,
+      book.content_warnings ? JSON.stringify(book.content_warnings) : null
     )
     .run()
 }

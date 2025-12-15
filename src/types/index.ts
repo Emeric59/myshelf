@@ -23,6 +23,9 @@ export type RecommendationSource = 'ai_auto' | 'ai_request' | 'similar' | 'trend
 export interface Book {
   id: string
   open_library_id?: string
+  google_books_id?: string
+  hardcover_id?: string
+  hardcover_slug?: string
   title: string
   original_title?: string
   author?: string
@@ -36,6 +39,9 @@ export interface Book {
   isbn_13?: string
   language?: string
   genres?: string[]
+  tropes?: string[]
+  moods?: string[]
+  content_warnings?: string[]
   series_name?: string
   series_position?: number
   external_ids?: Record<string, string>

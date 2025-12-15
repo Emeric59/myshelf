@@ -100,6 +100,22 @@ export async function searchBooksMultiSource(query: string): Promise<UnifiedBook
 }
 
 /**
+ * Check if a book should be filtered out (summaries, guides, etc.)
+ */
+function shouldFilterOut(title: string): boolean {
+  const lowerTitle = title.toLowerCase()
+  return (
+    lowerTitle.includes("summary of") ||
+    lowerTitle.includes("summary:") ||
+    lowerTitle.includes("guide to") ||
+    lowerTitle.includes("analysis of") ||
+    lowerTitle.includes("study guide") ||
+    lowerTitle.includes("cliff notes") ||
+    lowerTitle.includes("sparknotes")
+  )
+}
+
+/**
  * Merge results from all sources, deduplicating by ISBN or title+author
  */
 function mergeBookResults(
@@ -109,17 +125,42 @@ function mergeBookResults(
 ): UnifiedBookResult[] {
   const bookMap = new Map<string, UnifiedBookResult>()
 
-  // Generate a dedupe key from title and author
+  // Generate a dedupe key from cleaned title and author
   const getDedupeKey = (title: string, author: string): string => {
-    return `${normalizeString(title)}::${normalizeString(author)}`
+    const cleanedTitle = cleanTitleForDedupe(title)
+    return `${normalizeString(cleanedTitle)}::${normalizeString(author)}`
   }
 
   // Process Google Books (primary source)
   for (const book of google) {
+    // Skip summaries, guides, etc.
+    if (shouldFilterOut(book.title)) continue
+
     const author = book.authors[0] || ""
     const key = book.isbn13 || getDedupeKey(book.title, author)
 
-    if (!bookMap.has(key)) {
+    // Check if we already have this book (fuzzy match on title)
+    let existingKey: string | undefined
+    for (const [k, v] of bookMap) {
+      if (fuzzyMatch(v.title, book.title) && normalizeString(v.authors[0] || "") === normalizeString(author)) {
+        existingKey = k
+        break
+      }
+    }
+
+    if (existingKey) {
+      // Merge with existing - prefer entry with more data
+      const existing = bookMap.get(existingKey)!
+      if (!existing.coverUrl && book.thumbnail) {
+        existing.coverUrl = book.thumbnail
+      }
+      if (!existing.description && book.description) {
+        existing.description = book.description
+      }
+      if (!existing.sources.includes("google")) {
+        existing.sources.push("google")
+      }
+    } else if (!bookMap.has(key)) {
       bookMap.set(key, {
         id: `g_${book.id}`,
         googleBooksId: book.id,
@@ -312,17 +353,37 @@ function normalizeString(str: string): string {
 }
 
 /**
+ * Clean title for deduplication (remove edition suffixes, translations markers, etc.)
+ */
+function cleanTitleForDedupe(title: string): string {
+  return title
+    .toLowerCase()
+    // Remove common edition/translation suffixes
+    .replace(/\s*[-–:]\s*(version française|french edition|édition française)/gi, "")
+    .replace(/\s*[-–:]\s*(svensk utgåva|swedish edition)/gi, "")
+    .replace(/\s*[-–:]\s*(deutsche ausgabe|german edition)/gi, "")
+    .replace(/\s*\(.*?(edition|édition|ausgabe|version).*?\)/gi, "")
+    .replace(/\s*[-–]\s*tome\s*\d+/gi, "")
+    .replace(/\s+by\s+.*$/gi, "") // Remove "by Author" suffix
+    .replace(/\s+summary$/gi, "") // Remove "Summary" suffix
+    .trim()
+}
+
+/**
  * Fuzzy match two strings (for title matching)
  */
 function fuzzyMatch(str1: string, str2: string): boolean {
-  const normalized1 = normalizeString(str1)
-  const normalized2 = normalizeString(str2)
+  const normalized1 = normalizeString(cleanTitleForDedupe(str1))
+  const normalized2 = normalizeString(cleanTitleForDedupe(str2))
 
   // Exact match after normalization
   if (normalized1 === normalized2) return true
 
-  // One contains the other
-  if (normalized1.includes(normalized2) || normalized2.includes(normalized1)) {
+  // One contains the other (at least 80% of the shorter one)
+  const shorter = normalized1.length < normalized2.length ? normalized1 : normalized2
+  const longer = normalized1.length < normalized2.length ? normalized2 : normalized1
+
+  if (longer.includes(shorter) && shorter.length / longer.length > 0.7) {
     return true
   }
 

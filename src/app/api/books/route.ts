@@ -6,6 +6,8 @@ import {
   extractDescription,
   getCoverUrl,
   getAuthor,
+  getGoogleBook,
+  getHardcoverBookDetails,
 } from "@/lib/api"
 import {
   getUserBooks,
@@ -17,6 +19,26 @@ import {
   countBooksByStatus,
 } from "@/lib/db"
 import type { BookStatus, Book } from "@/types"
+
+// Extended book data from search results
+interface BookPayload {
+  id: string
+  title?: string
+  authors?: string[]
+  description?: string
+  coverUrl?: string
+  pageCount?: number
+  publishedDate?: string
+  language?: string
+  genres?: string[]
+  tropes?: string[]
+  moods?: string[]
+  contentWarnings?: string[]
+  seriesName?: string
+  googleBooksId?: string
+  hardcoverSlug?: string
+  isbn13?: string
+}
 
 // Runtime edge for Cloudflare
 export const runtime = "edge"
@@ -74,9 +96,10 @@ export async function POST(request: NextRequest) {
   try {
     const { env } = getRequestContext()
     const body = await request.json()
-    const { id, status = "to_read" } = body as {
+    const { id, status = "to_read", bookData } = body as {
       id: string
       status?: BookStatus
+      bookData?: BookPayload
     }
 
     if (!id) {
@@ -86,41 +109,33 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Fetch book details from Open Library
-    const [work, editions] = await Promise.all([
-      getWork(id),
-      getWorkEditions(id, 1),
-    ])
+    let book: Book
 
-    const edition = editions.entries?.[0]
-
-    // Get author name if available
-    let authorName: string | undefined
-    if (work.authors?.[0]?.author?.key) {
-      try {
-        const author = await getAuthor(work.authors[0].author.key.replace("/authors/", ""))
-        authorName = author.name
-      } catch {
-        // Ignore author fetch errors
+    // Check if we have pre-fetched book data from search
+    if (bookData && bookData.title) {
+      // Use the data passed from search results
+      book = {
+        id,
+        title: bookData.title,
+        author: bookData.authors?.join(", "),
+        description: bookData.description,
+        cover_url: bookData.coverUrl,
+        page_count: bookData.pageCount,
+        published_date: bookData.publishedDate,
+        language: bookData.language,
+        genres: bookData.genres,
+        series_name: bookData.seriesName,
+        isbn_13: bookData.isbn13,
+        // Enrichment data
+        tropes: bookData.tropes,
+        moods: bookData.moods,
+        content_warnings: bookData.contentWarnings,
+        google_books_id: bookData.googleBooksId,
+        hardcover_slug: bookData.hardcoverSlug,
       }
-    }
-
-    // Build book object
-    const book: Book = {
-      id,
-      open_library_id: id,
-      title: work.title,
-      author: authorName,
-      description: extractDescription(work.description),
-      cover_url: work.covers?.[0]
-        ? getCoverUrl("id", work.covers[0], "M")
-        : edition?.covers?.[0]
-          ? getCoverUrl("id", edition.covers[0], "M")
-          : undefined,
-      page_count: edition?.number_of_pages,
-      published_date: work.first_publish_date,
-      genres: work.subjects?.slice(0, 5),
-      language: edition?.languages?.[0]?.key?.replace("/languages/", ""),
+    } else {
+      // Fallback: Fetch book details based on ID prefix
+      book = await fetchBookDetails(id)
     }
 
     // Save to D1 database
@@ -138,6 +153,97 @@ export async function POST(request: NextRequest) {
       { error: "Failed to add book" },
       { status: 500 }
     )
+  }
+}
+
+// Fetch book details based on ID prefix
+async function fetchBookDetails(id: string): Promise<Book> {
+  // Google Books ID (g_xxx)
+  if (id.startsWith("g_")) {
+    const googleId = id.replace("g_", "")
+    const googleBook = await getGoogleBook(googleId)
+
+    if (!googleBook) {
+      throw new Error(`Book not found: ${id}`)
+    }
+
+    // Try to enrich with Hardcover data
+    let tropes: string[] = []
+    let moods: string[] = []
+    let contentWarnings: string[] = []
+
+    try {
+      const hardcoverData = await getHardcoverBookDetails(
+        googleBook.title.toLowerCase().replace(/\s+/g, "-")
+      )
+      if (hardcoverData) {
+        tropes = hardcoverData.tropes
+        moods = hardcoverData.moods
+        contentWarnings = hardcoverData.contentWarnings
+      }
+    } catch {
+      // Ignore Hardcover enrichment errors
+    }
+
+    return {
+      id,
+      google_books_id: googleId,
+      title: googleBook.title,
+      author: googleBook.authors.join(", "),
+      description: googleBook.description,
+      cover_url: googleBook.thumbnail,
+      page_count: googleBook.pageCount,
+      published_date: googleBook.publishedDate,
+      language: googleBook.language,
+      genres: googleBook.categories,
+      isbn_13: googleBook.isbn13,
+      tropes,
+      moods,
+      content_warnings: contentWarnings,
+    }
+  }
+
+  // Hardcover ID (hc_xxx)
+  if (id.startsWith("hc_")) {
+    throw new Error("Direct Hardcover book add not supported yet")
+  }
+
+  // Open Library ID (ol_xxx or plain ID)
+  const openLibraryId = id.startsWith("ol_") ? id.replace("ol_", "") : id
+
+  const [work, editions] = await Promise.all([
+    getWork(openLibraryId),
+    getWorkEditions(openLibraryId, 1),
+  ])
+
+  const edition = editions.entries?.[0]
+
+  // Get author name if available
+  let authorName: string | undefined
+  if (work.authors?.[0]?.author?.key) {
+    try {
+      const author = await getAuthor(work.authors[0].author.key.replace("/authors/", ""))
+      authorName = author.name
+    } catch {
+      // Ignore author fetch errors
+    }
+  }
+
+  return {
+    id,
+    open_library_id: openLibraryId,
+    title: work.title,
+    author: authorName,
+    description: extractDescription(work.description),
+    cover_url: work.covers?.[0]
+      ? getCoverUrl("id", work.covers[0], "M")
+      : edition?.covers?.[0]
+        ? getCoverUrl("id", edition.covers[0], "M")
+        : undefined,
+    page_count: edition?.number_of_pages,
+    published_date: work.first_publish_date,
+    genres: work.subjects?.slice(0, 5),
+    language: edition?.languages?.[0]?.key?.replace("/languages/", ""),
   }
 }
 
