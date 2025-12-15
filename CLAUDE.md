@@ -10,76 +10,158 @@
 - **Plateforme** : PWA (web + mobile installable)
 - **Style** : Whimsical, violet/vert, ambiance nature/cosy
 - **Objectif** : Tracker ses lectures/visionnages + obtenir des recommandations IA personnalisées
+- **URL Production** : https://myshelf-d69.pages.dev
 
 ## Stack technique
 
 | Composant | Technologie | Raison |
 |-----------|-------------|--------|
-| Frontend | Next.js 14 (App Router) + TypeScript | SSR, excellent DX |
-| Styling | Tailwind CSS + shadcn/ui | Rapide, customisable |
+| Frontend | Next.js 16 (App Router) + TypeScript | SSR, excellent DX |
+| Styling | Tailwind CSS v4 + shadcn/ui | Rapide, customisable |
 | Backend | Cloudflare Workers (API routes) | Serverless, pas cher |
 | Database | Cloudflare D1 (SQLite) | Simple, gratuit |
-| Vectors | Cloudflare Vectorize | Embeddings pour recos |
-| IA | Google Gemini 2.5 Flash | Bon rapport qualité/prix |
+| Vectors | Cloudflare Vectorize | Embeddings pour recos (optionnel) |
+| IA | Google Gemini 2.0 Flash | Bon rapport qualité/prix |
 | Déploiement | Cloudflare Pages | Auto-deploy depuis Git |
 
-## Structure du projet
+## Commandes
 
-```
-myshelf/
-├── CLAUDE.md                    # CE FICHIER
-├── package.json
-├── next.config.ts
-├── wrangler.toml                # Config Cloudflare
-├── .env.local                   # Variables locales (pas en git)
-│
-├── docs/
-│   ├── FEATURES.md              # Specs fonctionnelles complètes
-│   ├── DATABASE.md              # Schéma SQL détaillé
-│   └── API.md                   # Documentation endpoints
-│
-├── migrations/
-│   ├── 001_initial.sql          # Schéma initial
-│   └── 002_seed_tropes.sql      # Données de seed
-│
-├── src/
-│   ├── app/                     # Next.js App Router
-│   ├── components/              # Composants React
-│   │   ├── ui/                  # shadcn/ui
-│   │   ├── layout/              # Header, BottomNav, etc.
-│   │   ├── media/               # MediaCard, RatingStars, etc.
-│   │   └── ...
-│   ├── lib/                     # Utilitaires et clients
-│   │   ├── db/                  # Queries D1
-│   │   ├── api/                 # Clients Open Library, TMDB
-│   │   └── ai/                  # Client Gemini
-│   ├── hooks/                   # Custom hooks
-│   └── types/                   # Types TypeScript
-│
-├── public/
-│   ├── icons/                   # PWA icons
-│   └── manifest.json            # PWA manifest
-│
-└── scripts/
-    └── seed-tropes.ts           # Script de seed
+```bash
+# Installation
+npm install --legacy-peer-deps
+
+# Dev local
+npm run dev
+
+# Build (TOUJOURS vérifier avant push)
+npm run build
+
+# Tests unitaires
+npm test              # Mode watch
+npm run test:run      # Une seule exécution
+
+# Migrations D1 (production)
+wrangler d1 execute myshelf-db --file=./migrations/001_initial.sql --remote
+wrangler d1 execute myshelf-db --file=./migrations/002_seed_tropes.sql --remote
 ```
 
-## Design System
+## Variables d'environnement
 
-### Couleurs
+```bash
+# .env.local (dev)
+TMDB_API_KEY=xxx
+GEMINI_API_KEY=xxx
 
-- **Primary (Violet)**: `#8b5cf6` - Couleur principale
-- **Secondary (Vert)**: `#10b981` - Accent nature
-- **Background (Cream)**: `#FAF7F2` - Fond principal
+# Production: configurées dans Cloudflare Dashboard
+```
 
-### Typographie
+## Règles strictes
 
-- **Titres**: Playfair Display (serif, élégant)
-- **Corps**: Inter (sans-serif, lisible)
+1. **TypeScript strict** : Pas de `any`, types explicites
+2. **Pas de données inventées** : Toujours vérifier via API que le média existe
+3. **Blacklist = absolu** : Un trope blacklisté ne doit JAMAIS apparaître
+4. **Mobile-first** : Toujours designer pour mobile d'abord
+5. **Accessibilité** : Labels, contraste, navigation clavier
 
-### Icônes
+## Règles Cloudflare Pages (CRITIQUE)
 
-Utiliser **Lucide React** exclusivement.
+### Edge Runtime obligatoire
+
+**Toutes les pages dynamiques (`[id]`) ET les API routes DOIVENT avoir :**
+
+```typescript
+export const runtime = 'edge'
+```
+
+Sans cela, le déploiement Cloudflare échouera avec l'erreur :
+```
+The following routes were not configured to run with the Edge Runtime
+```
+
+### Accès à la base de données D1
+
+```typescript
+import { getRequestContext } from "@cloudflare/next-on-pages"
+
+export async function GET() {
+  const { env } = getRequestContext()
+  const db = env.DB
+  // ...
+}
+```
+
+## TypeScript - Pièges courants
+
+### 1. `res.json()` retourne `unknown`
+
+```typescript
+// MAUVAIS - erreur TypeScript
+const data = await res.json()
+setData(data)
+
+// BON - assertion de type
+const data = await res.json() as MyType
+setData(data)
+```
+
+### 2. Casing des fichiers
+
+Windows n'est pas sensible à la casse, mais Git l'est !
+
+```typescript
+// Le fichier s'appelle openLibrary.ts (camelCase)
+
+// MAUVAIS
+import { searchBooks } from '@/lib/api/openlibrary'
+
+// BON
+import { searchBooks } from '@/lib/api/openLibrary'
+```
+
+### 3. Schéma DB vs Types TypeScript
+
+Les noms de colonnes DB peuvent différer des propriétés TypeScript. Utiliser des alias SQL :
+
+```sql
+-- La colonne s'appelle 'creators' mais le type attend 'creator'
+SELECT s.creators as creator FROM shows s
+```
+
+## Composants personnalisés
+
+### RatingStars
+
+```tsx
+// Pour le mode édition, utiliser 'interactive' (pas 'editable')
+<RatingStars
+  rating={book.rating || 0}
+  interactive
+  size="lg"
+  onChange={handleRatingChange}
+/>
+```
+
+### Progress
+
+Composant custom dans `src/components/ui/progress.tsx` (pas de Radix).
+
+## Structure clé
+
+```
+src/
+├── app/
+│   ├── books/[id]/page.tsx     # runtime = 'edge'
+│   ├── movies/[id]/page.tsx    # runtime = 'edge'
+│   ├── shows/[id]/page.tsx     # runtime = 'edge'
+│   └── api/*/route.ts          # runtime = 'edge'
+├── lib/
+│   ├── api/
+│   │   ├── openLibrary.ts      # ATTENTION: camelCase !
+│   │   └── tmdb.ts
+│   └── db/                     # Helpers D1
+└── components/
+    └── ui/progress.tsx         # Composant custom
+```
 
 ## APIs externes
 
@@ -95,35 +177,8 @@ Utiliser **Lucide React** exclusivement.
 - SDK: `@google/generative-ai`
 - Modèle: `gemini-2.0-flash`
 
-## Commandes
+## Informations Cloudflare
 
-```bash
-# Installation
-npm install --legacy-peer-deps
-
-# Dev local
-npm run dev
-
-# Build
-npm run build
-
-# Migrations D1
-wrangler d1 execute myshelf-db --file=./migrations/001_initial.sql
-wrangler d1 execute myshelf-db --file=./migrations/002_seed_tropes.sql
-```
-
-## Variables d'environnement
-
-```bash
-# .env.local
-TMDB_API_KEY=xxx
-GEMINI_API_KEY=xxx
-```
-
-## Règles strictes
-
-1. **TypeScript strict** : Pas de `any`, types explicites
-2. **Pas de données inventées** : Toujours vérifier via API que le média existe
-3. **Blacklist = absolu** : Un trope blacklisté ne doit JAMAIS apparaître
-4. **Mobile-first** : Toujours designer pour mobile d'abord
-5. **Accessibilité** : Labels, contraste, navigation clavier
+- **D1 Database ID** : `2bf81530-3003-4748-958a-111383c35183`
+- **Pages URL** : https://myshelf-d69.pages.dev
+- **GitHub Repo** : https://github.com/Emeric59/myshelf
