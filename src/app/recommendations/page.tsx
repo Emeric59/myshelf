@@ -3,12 +3,14 @@
 import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Sparkles, MessageCircle, RefreshCw, Heart, X, Check, Loader2, Book, Film, Tv } from "lucide-react"
+import { Sparkles, MessageCircle, RefreshCw, Check, Loader2, Book, Film, Tv } from "lucide-react"
 import { Header, PageHeader } from "@/components/layout"
 import { BottomNav } from "@/components/layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
+
+type MediaTypeFilter = "all" | "book" | "movie" | "show"
 
 interface RecommendationItem {
   id: string
@@ -20,6 +22,13 @@ interface RecommendationItem {
   added?: boolean
   loading?: boolean
 }
+
+const typeFilters: { value: MediaTypeFilter; label: string; icon: typeof Book }[] = [
+  { value: "all", label: "Tous", icon: Sparkles },
+  { value: "book", label: "Livres", icon: Book },
+  { value: "movie", label: "Films", icon: Film },
+  { value: "show", label: "Séries", icon: Tv },
+]
 
 // Mood options for quick recommendations
 const moods = [
@@ -35,6 +44,7 @@ export default function RecommendationsPage() {
   const [recommendations, setRecommendations] = useState<RecommendationItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [selectedMood, setSelectedMood] = useState<string | null>(null)
+  const [selectedType, setSelectedType] = useState<MediaTypeFilter>("all")
 
   const handleMoodSelect = async (moodId: string) => {
     const mood = moods.find(m => m.id === moodId)
@@ -44,11 +54,23 @@ export default function RecommendationsPage() {
     setIsLoading(true)
     setRecommendations([])
 
+    // Construire le prompt avec le type si sélectionné
+    let prompt = mood.prompt
+    const mediaTypes = selectedType !== "all" ? [selectedType] : undefined
+
+    if (selectedType === "book") {
+      prompt += " (uniquement des livres)"
+    } else if (selectedType === "movie") {
+      prompt += " (uniquement des films)"
+    } else if (selectedType === "show") {
+      prompt += " (uniquement des séries)"
+    }
+
     try {
       const response = await fetch("/api/recommendations/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: mood.prompt }),
+        body: JSON.stringify({ query: prompt, mediaTypes }),
       })
 
       if (!response.ok) throw new Error("Failed to get recommendations")
@@ -173,6 +195,33 @@ export default function RecommendationsPage() {
           </CardContent>
         </Card>
 
+        {/* Type Filter */}
+        <section className="mb-6">
+          <h3 className="font-display text-lg font-medium mb-3">
+            Quel type de média ?
+          </h3>
+          <div className="flex gap-2">
+            {typeFilters.map((filter) => {
+              const Icon = filter.icon
+              return (
+                <button
+                  key={filter.value}
+                  onClick={() => setSelectedType(filter.value)}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 rounded-full border text-sm transition-all",
+                    selectedType === filter.value
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border hover:border-primary/50"
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {filter.label}
+                </button>
+              )
+            })}
+          </div>
+        </section>
+
         {/* Mood Selection */}
         <section className="mb-8">
           <h3 className="font-display text-lg font-medium mb-4">
@@ -183,11 +232,12 @@ export default function RecommendationsPage() {
               <button
                 key={mood.id}
                 onClick={() => handleMoodSelect(mood.id)}
-                className={`p-3 rounded-xl border text-center transition-all ${
+                className={cn(
+                  "p-3 rounded-xl border text-center transition-all",
                   selectedMood === mood.id
                     ? "border-primary bg-primary/10"
                     : "border-border hover:border-primary/50"
-                }`}
+                )}
               >
                 <span className="text-2xl block mb-1">{mood.emoji}</span>
                 <span className="text-xs">{mood.label}</span>
