@@ -104,10 +104,14 @@ async function executeGraphQL<T>(query: string): Promise<T> {
     throw new Error("HARDCOVER_API_KEY is not configured")
   }
 
+  // Hardcover expects "Bearer {token}" format
+  // Handle case where key might already include "Bearer " prefix or not
+  const authHeader = apiKey.startsWith("Bearer ") ? apiKey : `Bearer ${apiKey}`
+
   const response = await fetch(HARDCOVER_URL, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: authHeader,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ query }),
