@@ -63,7 +63,16 @@ export async function GET(request: NextRequest) {
 
     // If requesting specific season details from TMDB
     if (seasonNumber) {
-      const season = await getSeason(showId, parseInt(seasonNumber))
+      let season
+      try {
+        season = await getSeason(showId, parseInt(seasonNumber))
+      } catch (tmdbError) {
+        console.error("TMDB error:", tmdbError)
+        return NextResponse.json({
+          error: "Failed to fetch season from TMDB",
+          details: tmdbError instanceof Error ? tmdbError.message : String(tmdbError)
+        }, { status: 500 })
+      }
 
       // Cache the season info
       await db
