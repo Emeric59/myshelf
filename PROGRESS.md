@@ -4,10 +4,11 @@
 
 ## Statut actuel
 
-**Phase :** Phase 7 - Finitions et polish (TERMINÉE)
+**Phase :** Phase 8 - App fonctionnelle complète
 **Dernière mise à jour :** 2025-12-15
 **Build :** OK
 **Déployé :** https://myshelf-d69.pages.dev
+**État DB prod :** Données réelles seedées (vrais IDs Open Library + TMDB)
 
 ---
 
@@ -17,7 +18,7 @@
 - [x] Initialisation Next.js 16 + TypeScript + Tailwind CSS v4
 - [x] Installation et configuration shadcn/ui
 - [x] Configuration wrangler.toml pour D1
-- [x] Création des migrations SQL (001_initial.sql, 002_seed_tropes.sql)
+- [x] Création des migrations SQL
 - [x] Création des types TypeScript (src/types/index.ts)
 - [x] Création des clients API (Open Library, TMDB)
 - [x] Création des composants UI (MediaCard, RatingStars, StatusBadge, Progress)
@@ -26,7 +27,6 @@
 - [x] Création de la page de recherche unifiée
 - [x] Création des API routes initiales
 - [x] Création des pages recommendations, stats, settings
-- [x] Application des migrations D1 en local
 - [x] Build validé sans erreurs
 
 ### Phase 2 : Intégration données - TERMINÉE
@@ -49,11 +49,10 @@
 - [x] Connecter la page /stats à l'API
 - [x] Connecter la page /stats/goals à l'API
 - [x] Highlights : DB helper + API route `/api/highlights` + hook `useHighlights` + page `/highlights`
-- [x] Seed de données de test (`migrations/003_seed_test_data.sql`)
 - [ ] Import BookNode / TV Time (reporté - optionnel)
 
 ### Phase 4 : IA et recommandations - TERMINÉE
-- [x] Intégration Gemini 2.5 Flash avec mode thinking
+- [x] Intégration Gemini 2.0 Flash
 - [x] Client IA (`src/lib/ai/gemini.ts`)
 - [x] API route `/api/recommendations/ask`
 - [x] Interface conversationnelle connectée
@@ -79,15 +78,33 @@
 
 ### Phase 7 : Fonctionnalités manquantes - TERMINÉE
 - [x] Pages de détail médias (`/books/[id]`, `/movies/[id]`, `/shows/[id]`)
-- [x] Système de review/feedback avec UI :
-  - Aspects appréciés (personnages, romance, worldbuilding, etc.)
-  - Émotions ressenties (m'a fait pleurer, coup de coeur, etc.)
-  - Commentaires personnels
+- [x] Système de review/feedback avec UI
 - [x] Bouton "Ajouter" fonctionnel dans les recommandations IA
 - [x] Gestion des abonnements streaming connectée à la DB
 - [x] API route `/api/subscriptions`
 - [x] Composant Progress (`src/components/ui/progress.tsx`)
 - [ ] Badges streaming sur les résultats de recherche - optionnel
+
+### Phase 8 : Polish et données réelles - TERMINÉE
+- [x] Dashboard dynamique (stats réelles depuis APIs)
+- [x] API `/api/books?id=xxx` pour récupérer un livre spécifique
+- [x] Tropes seedés en production (54 tropes)
+- [x] Données réelles avec vrais IDs (migration 004_real_data_seed.sql)
+  - 10 livres (vrais IDs Open Library)
+  - 10 films (vrais IDs TMDB)
+  - 10 séries (vrais IDs TMDB)
+  - Reviews, highlights, objectifs 2025
+
+---
+
+## Migrations D1
+
+| Fichier | Description | Appliquée en prod |
+|---------|-------------|-------------------|
+| `001_initial.sql` | Schéma complet | ✅ |
+| `002_seed_tropes.sql` | 54 tropes + providers streaming | ✅ |
+| `003_seed_test_data.sql` | Données fictives (OBSOLÈTE) | ❌ Remplacé |
+| `004_real_data_seed.sql` | Données réelles avec vrais IDs | ✅ |
 
 ---
 
@@ -96,7 +113,7 @@
 | Route | Méthodes | Description |
 |-------|----------|-------------|
 | `/api/search` | GET | Recherche Open Library + TMDB |
-| `/api/books` | GET, POST, PATCH, DELETE | CRUD livres |
+| `/api/books` | GET, POST, PATCH, DELETE | CRUD livres (`?id=xxx` pour un seul) |
 | `/api/movies` | GET, POST, PATCH, DELETE | CRUD films |
 | `/api/shows` | GET, POST, PATCH, DELETE | CRUD séries |
 | `/api/reviews` | GET, POST, DELETE | Gestion des avis |
@@ -104,7 +121,7 @@
 | `/api/stats` | GET | Statistiques globales |
 | `/api/goals` | GET, POST | Objectifs annuels |
 | `/api/highlights` | GET, POST, PATCH, DELETE | Passages favoris |
-| `/api/recommendations/ask` | POST | Recommandations IA (Gemini 2.5 Flash) |
+| `/api/recommendations/ask` | POST | Recommandations IA (Gemini 2.0 Flash) |
 | `/api/subscriptions` | GET, POST | Abonnements streaming |
 
 ---
@@ -128,73 +145,45 @@
 ```
 src/
 ├── app/
-│   ├── page.tsx                    # Dashboard
+│   ├── page.tsx                    # Dashboard (dynamique)
 │   ├── books/
 │   │   ├── page.tsx                # Bibliothèque (useBooks)
-│   │   └── [id]/page.tsx           # Détail livre
+│   │   └── [id]/page.tsx           # Détail livre (edge runtime)
 │   ├── movies/
 │   │   ├── page.tsx                # Filmothèque (useMovies)
-│   │   └── [id]/page.tsx           # Détail film
+│   │   └── [id]/page.tsx           # Détail film (edge runtime)
 │   ├── shows/
 │   │   ├── page.tsx                # Séries (useShows)
-│   │   └── [id]/page.tsx           # Détail série
+│   │   └── [id]/page.tsx           # Détail série (edge runtime)
 │   ├── search/page.tsx             # Recherche unifiée
-│   ├── highlights/page.tsx         # Passages favoris (useHighlights)
+│   ├── highlights/page.tsx         # Passages favoris
 │   ├── recommendations/
 │   │   ├── page.tsx                # Recommandations
 │   │   └── ask/page.tsx            # Chat IA
 │   ├── stats/
-│   │   ├── page.tsx                # Statistiques (useStats)
-│   │   └── goals/page.tsx          # Objectifs (useGoals)
+│   │   ├── page.tsx                # Statistiques
+│   │   └── goals/page.tsx          # Objectifs
 │   ├── settings/
-│   │   ├── page.tsx                # Paramètres généraux
-│   │   ├── tropes/page.tsx         # Tropes (useTropes)
-│   │   ├── subscriptions/page.tsx  # Abonnements streaming
-│   │   └── import/page.tsx         # Import données
-│   └── api/
-│       ├── search/route.ts
-│       ├── books/route.ts
-│       ├── movies/route.ts
-│       ├── shows/route.ts
-│       ├── reviews/route.ts
-│       ├── tropes/route.ts
-│       ├── stats/route.ts
-│       ├── goals/route.ts
-│       ├── highlights/route.ts
-│       ├── subscriptions/route.ts
-│       └── recommendations/ask/route.ts
+│   │   ├── page.tsx                # Paramètres
+│   │   ├── tropes/page.tsx         # Tropes
+│   │   ├── subscriptions/page.tsx  # Abonnements
+│   │   └── import/page.tsx         # Import
+│   └── api/                        # Routes API (edge runtime)
 ├── components/
 │   ├── ui/                         # shadcn/ui + Progress
 │   ├── layout/                     # Header, BottomNav
 │   └── media/                      # MediaCard, RatingStars
 ├── lib/
 │   ├── api/
-│   │   ├── openLibrary.ts          # Client Open Library (ATTENTION: camelCase)
-│   │   └── tmdb.ts                 # Client TMDB
+│   │   ├── openLibrary.ts          # ATTENTION: camelCase !
+│   │   └── tmdb.ts
 │   ├── ai/
-│   │   └── gemini.ts               # Client Gemini 2.5 Flash
-│   ├── db/
-│   │   ├── client.ts
-│   │   ├── books.ts
-│   │   ├── movies.ts
-│   │   ├── shows.ts
-│   │   ├── reviews.ts
-│   │   ├── tropes.ts
-│   │   ├── stats.ts
-│   │   ├── highlights.ts
-│   │   └── index.ts
-│   └── hooks/
-│       ├── useBooks.ts
-│       ├── useMovies.ts
-│       ├── useShows.ts
-│       ├── useTropes.ts
-│       ├── useStats.ts
-│       ├── useGoals.ts
-│       ├── useHighlights.ts
-│       └── index.ts
+│   │   └── gemini.ts
+│   ├── db/                         # Helpers D1
+│   └── hooks/                      # Custom hooks
 ├── types/
 │   └── index.ts
-└── env.d.ts                        # Types Cloudflare
+└── env.d.ts
 ```
 
 ---
@@ -213,49 +202,41 @@ src/
 
 ### Règles Cloudflare Pages
 
-1. **Edge Runtime obligatoire** : Toutes les pages dynamiques (`[id]`) DOIVENT avoir :
+1. **Edge Runtime obligatoire** : Toutes les pages dynamiques (`[id]`) ET API routes :
    ```typescript
    export const runtime = 'edge'
    ```
 
-2. **API Routes** : Toutes les routes API DOIVENT avoir :
-   ```typescript
-   export const runtime = 'edge'
-   ```
-
-3. **Accès D1** : Utiliser `getRequestContext()` de `@cloudflare/next-on-pages`
+2. **Accès D1** : Utiliser `getRequestContext()` de `@cloudflare/next-on-pages`
 
 ### TypeScript strict
 
-1. **`res.json()` retourne `unknown`** : Toujours ajouter une assertion de type :
+1. **`res.json()` retourne `unknown`** :
    ```typescript
    const data = await res.json() as MyType
    ```
 
-2. **Casing des fichiers** : Windows n'est pas sensible à la casse mais Git l'est.
-   - `openLibrary.ts` (camelCase) - NE PAS importer comme `openlibrary`
+2. **Casing des fichiers** : `openLibrary.ts` (camelCase) - NE PAS importer comme `openlibrary`
 
 ### Schéma DB vs Types TypeScript
 
-Les noms de colonnes dans la DB peuvent différer des propriétés TypeScript :
-
 | DB (schema) | TypeScript (types) | Notes |
 |-------------|-------------------|-------|
-| `creators` | `creator` | Alias dans la query SQL |
-| `seasons_count` | `total_seasons` | Alias dans la query SQL |
-| `episodes_count` | `total_episodes` | Alias dans la query SQL |
+| `creators` | `creator` | Alias SQL |
+| `seasons_count` | `total_seasons` | Alias SQL |
+| `episodes_count` | `total_episodes` | Alias SQL |
 
-### Composants shadcn/ui
+### Composants
 
-- `RatingStars` : Utiliser `interactive` (pas `editable`) pour le mode édition
-- `Progress` : Composant custom créé dans `src/components/ui/progress.tsx`
+- `RatingStars` : Utiliser `interactive` (pas `editable`)
+- `Progress` : Composant custom dans `ui/progress.tsx`
 
 ---
 
 ## Comment tester
 
 ```bash
-# Dev local (recherche fonctionne, D1 retourne vide)
+# Dev local
 npm run dev
 
 # Dev avec D1 local
@@ -264,29 +245,21 @@ npx wrangler pages dev .next --d1=DB=myshelf-db
 # Tests unitaires
 npm test              # Mode watch
 npm run test:run      # Une seule exécution
-npm run test:coverage # Avec couverture de code
 
-# Build local (vérifier avant push)
+# Build local (TOUJOURS vérifier avant push)
 npm run build
 ```
 
-## Structure des tests
+---
 
-```
-src/__tests__/
-├── setup.ts              # Configuration globale (mocks env, fetch)
-├── mocks/
-│   └── d1.ts             # Mock D1Database + factories de données
-├── db/
-│   ├── books.test.ts     # Tests helpers livres
-│   ├── movies.test.ts    # Tests helpers films
-│   ├── shows.test.ts     # Tests helpers séries
-│   ├── stats.test.ts     # Tests helpers stats/goals
-│   └── highlights.test.ts # Tests helpers passages favoris
-└── api/
-    ├── openLibrary.test.ts # Tests client Open Library (ATTENTION: camelCase)
-    ├── tmdb.test.ts        # Tests client TMDB
-    └── gemini.test.ts      # Tests client Gemini AI
+## Commandes D1 production
+
+```bash
+# Appliquer une migration
+wrangler d1 execute myshelf-db --file=./migrations/xxx.sql --remote
+
+# Exécuter une commande SQL
+wrangler d1 execute myshelf-db --remote --command="SELECT * FROM books;"
 ```
 
 ---
@@ -315,10 +288,13 @@ GEMINI_API_KEY=xxx
 
 ## Bugs corrigés (historique)
 
-1. **Schéma shows.ts** : Colonnes `creator`, `total_seasons`, `total_episodes` n'existaient pas → Utiliser alias SQL
-2. **Schéma stats.ts** : `goals` n'a pas de colonnes par type → Utiliser pivot avec `MAX(CASE WHEN...)`
-3. **Colonnes inexistantes** : `tmdb_id` et `open_library_id` retirées des INSERT
+1. **Schéma shows.ts** : Alias SQL pour colonnes
+2. **Schéma stats.ts** : Pivot avec `MAX(CASE WHEN...)`
+3. **Colonnes inexistantes** : `tmdb_id` et `open_library_id` retirées
 4. **Import casing** : `openlibrary` → `openLibrary`
 5. **RatingStars prop** : `editable` → `interactive`
-6. **Composant manquant** : `Progress` créé dans ui/
-7. **Edge runtime** : Ajouté aux pages dynamiques `[id]`
+6. **Composant manquant** : `Progress` créé
+7. **Edge runtime** : Ajouté aux pages `[id]`
+8. **Dashboard stats** : Rendu dynamique (fetch APIs)
+9. **Données fictives** : Remplacées par vrais IDs Open Library + TMDB
+10. **Tropes vides** : Migration seedée en production
