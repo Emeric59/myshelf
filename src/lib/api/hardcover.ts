@@ -1,39 +1,36 @@
 /**
  * Hardcover API Client (GraphQL)
- * Documentation: https://hardcover.app/account/api
+ * Documentation: https://docs.hardcover.app/api/getting-started/
  */
 
 const HARDCOVER_URL = "https://api.hardcover.app/v1/graphql"
 
 // Types for Hardcover API responses
-interface HardcoverTagItem {
-  tag: string
-  tagSlug: string
-  category: string
-  categorySlug: string
-  spoilerRatio?: number
-  count?: number
-}
 
+// cached_tags is an object with string arrays (not complex objects)
 interface HardcoverCachedTags {
-  Genre?: HardcoverTagItem[]
-  Trope?: HardcoverTagItem[]
-  Mood?: HardcoverTagItem[]
-  "Content Warning"?: HardcoverTagItem[]
-  Tag?: HardcoverTagItem[]  // This contains trope-like data (dragons, enemies to lovers, etc.)
-  Theme?: HardcoverTagItem[]
+  Genre?: string[]
+  Trope?: string[]
+  Mood?: string[]
+  "Content Warning"?: string[]
+  Pace?: string[]
+  Fiction?: string[]
+  Nonfiction?: string[]
 }
 
 interface HardcoverContributor {
   author?: {
+    id?: number
     name: string
+    slug?: string
   }
+  contribution?: string
 }
 
 interface HardcoverSeries {
   name: string
+  slug?: string
   books_count?: number
-  position?: number
 }
 
 interface HardcoverBookRaw {
@@ -46,35 +43,26 @@ interface HardcoverBookRaw {
   cached_image?: string
   cached_contributors?: HardcoverContributor[]
   cached_tags?: HardcoverCachedTags
-  series?: HardcoverSeries[]
+  rating?: number
+  ratings_count?: number
+  series?: HardcoverSeries
 }
 
-interface HardcoverSearchDocument {
-  id: string
+// Search results format (from Typesense via search endpoint)
+interface HardcoverSearchResult {
+  id: number | string
   title: string
   slug: string
-  description?: string
-  pages?: number
-  release_date?: string
-  release_year?: number
-  image?: {
-    url?: string
-  }
   author_names?: string[]
-  genres?: string[]
-  moods?: string[]
-  content_warnings?: string[]
-  tags?: string[]
   series_names?: string[]
-}
-
-interface HardcoverSearchHit {
-  document: HardcoverSearchDocument
-}
-
-interface HardcoverSearchResults {
-  hits?: HardcoverSearchHit[]
-  found?: number
+  pages?: number
+  release_year?: number
+  release_date_i?: number
+  rating?: number
+  ratings_count?: number
+  moods?: string[]
+  tags?: string[]
+  image?: string
 }
 
 export interface HardcoverBookResult {
@@ -123,7 +111,7 @@ async function executeGraphQL<T>(query: string): Promise<T> {
 
   interface GraphQLResponse {
     data?: T
-    errors?: Array<{ message: string }>
+    errors?: Array<{ message: string; extensions?: { code?: string } }>
   }
 
   const data = (await response.json()) as GraphQLResponse
@@ -138,16 +126,18 @@ async function executeGraphQL<T>(query: string): Promise<T> {
 
 /**
  * Search for books on Hardcover
+ * Uses the search endpoint which is powered by Typesense
  */
 export async function searchHardcover(query: string): Promise<HardcoverBookResult[]> {
   // Escape quotes in query
   const escapedQuery = query.replace(/"/g, '\\"')
 
+  // Note: query_type must be "books" (lowercase, plural) per documentation
   const graphqlQuery = `
     query {
       search(
         query: "${escapedQuery}"
-        query_type: "Book"
+        query_type: "books"
         per_page: 15
         page: 1
       ) {
@@ -157,11 +147,11 @@ export async function searchHardcover(query: string): Promise<HardcoverBookResul
   `
 
   try {
-    const data = await executeGraphQL<{ search: { results: HardcoverSearchResults } }>(graphqlQuery)
+    const data = await executeGraphQL<{ search: { results: HardcoverSearchResult[] } }>(graphqlQuery)
 
-    // The search results are in hits[].document format
-    const hits = data.search?.results?.hits || []
-    return parseHardcoverSearchResults(hits)
+    // Results is a direct array of search results
+    const results = data.search?.results || []
+    return parseHardcoverSearchResults(results)
   } catch (error) {
     console.error("Hardcover search error:", error)
     return []
@@ -172,9 +162,11 @@ export async function searchHardcover(query: string): Promise<HardcoverBookResul
  * Get detailed book information by slug (includes tropes, moods, etc.)
  */
 export async function getHardcoverBookDetails(slug: string): Promise<HardcoverBookResult | null> {
+  const escapedSlug = slug.replace(/"/g, '\\"')
+
   const graphqlQuery = `
     query {
-      books(where: { slug: { _eq: "${slug}" } }) {
+      books(where: { slug: { _eq: "${escapedSlug}" } }, limit: 1) {
         id
         title
         slug
@@ -184,6 +176,12 @@ export async function getHardcoverBookDetails(slug: string): Promise<HardcoverBo
         cached_image
         cached_contributors
         cached_tags
+        rating
+        series {
+          name
+          slug
+          books_count
+        }
       }
     }
   `
@@ -229,40 +227,21 @@ export async function getHardcoverBookByTitleAuthor(
 }
 
 /**
- * Extract tag strings from Hardcover tag items
- */
-function extractTagStrings(items: HardcoverTagItem[] | undefined, limit = 10): string[] {
-  if (!items || items.length === 0) return []
-  return items.slice(0, limit).map((item) => item.tag)
-}
-
-/**
  * Parse raw Hardcover book data to our format
+ * Used for books query (detailed book info)
  */
 function parseHardcoverBook(book: HardcoverBookRaw): HardcoverBookResult {
   const tags = book.cached_tags || {}
 
   // Extract authors from cached_contributors
-  const authors = (book.cached_contributors || [])
-    .filter((c) => c.author?.name)
-    .map((c) => c.author!.name)
-
-  // Get series info
-  const series = book.series?.[0]
-
-  // Extract genres
-  const genres = extractTagStrings(tags.Genre, 5)
-
-  // Tropes come from both "Trope" and "Tag" categories
-  // "Tag" contains trope-like data such as "dragons", "enemies to lovers", etc.
-  const tropeItems = [...(tags.Trope || []), ...(tags.Tag || [])]
-  const tropes = extractTagStrings(tropeItems, 8)
-
-  // Extract moods
-  const moods = extractTagStrings(tags.Mood, 5)
-
-  // Extract content warnings
-  const contentWarnings = extractTagStrings(tags["Content Warning"], 6)
+  // Filter for "Author" contribution type, fallback to first contributor
+  const contributors = book.cached_contributors || []
+  const authorContributors = contributors.filter(
+    (c) => c.contribution === "Author" || !c.contribution
+  )
+  const authors = authorContributors.length > 0
+    ? authorContributors.map((c) => c.author?.name).filter((n): n is string => !!n)
+    : contributors.slice(0, 1).map((c) => c.author?.name).filter((n): n is string => !!n)
 
   return {
     id: book.id,
@@ -273,41 +252,37 @@ function parseHardcoverBook(book: HardcoverBookRaw): HardcoverBookResult {
     releaseDate: book.release_date,
     coverUrl: book.cached_image,
     authors,
-    genres,
-    tropes,
-    moods,
-    contentWarnings,
-    seriesName: series?.name,
-    seriesPosition: series?.position,
+    // cached_tags contains string arrays directly
+    genres: tags.Genre?.slice(0, 5) || [],
+    tropes: tags.Trope?.slice(0, 8) || [],
+    moods: tags.Mood?.slice(0, 5) || [],
+    contentWarnings: tags["Content Warning"]?.slice(0, 6) || [],
+    seriesName: book.series?.name,
   }
 }
 
 /**
- * Parse search results (different format from full book query)
- * Search results come as hits[].document with rich data
+ * Parse search results format
+ * Search results have a flatter structure than the books query
  */
-function parseHardcoverSearchResults(hits: HardcoverSearchHit[]): HardcoverBookResult[] {
-  return hits.map((hit) => {
-    const doc = hit.document
-
-    // Extract tropes from tags (tags contains a mix of tropes and other labels)
-    // Common tropes patterns: "dragons", "enemies to lovers", etc.
-    const tags = doc.tags || []
+function parseHardcoverSearchResults(results: HardcoverSearchResult[]): HardcoverBookResult[] {
+  return results.map((result) => {
+    const id = typeof result.id === "string" ? parseInt(result.id, 10) : result.id
 
     return {
-      id: parseInt(doc.id, 10) || 0,
-      title: doc.title,
-      slug: doc.slug,
-      description: doc.description,
-      pages: doc.pages,
-      coverUrl: doc.image?.url,
-      authors: doc.author_names || [],
-      genres: doc.genres || [],
-      tropes: tags.slice(0, 5), // Tags often contain trope-like data
-      moods: doc.moods || [],
-      contentWarnings: doc.content_warnings || [],
-      seriesName: doc.series_names?.[0],
-      releaseDate: doc.release_date || doc.release_year?.toString(),
+      id: id || 0,
+      title: result.title,
+      slug: result.slug,
+      pages: result.pages,
+      coverUrl: result.image,
+      authors: result.author_names || [],
+      // Search results have limited tag data
+      genres: [],
+      tropes: result.tags?.slice(0, 5) || [],
+      moods: result.moods || [],
+      contentWarnings: [],
+      seriesName: result.series_names?.[0],
+      releaseDate: result.release_year?.toString(),
     }
   })
 }
