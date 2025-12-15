@@ -1,6 +1,8 @@
 # CLAUDE.md — MyShelf
 
 > **IMPORTANT :** Consulter [`PROGRESS.md`](./PROGRESS.md) pour l'état actuel du développement et les prochaines étapes.
+>
+> **QUESTIONS :** Consulter [`QUESTIONS.md`](./QUESTIONS.md) pour les questions en attente de réponse de l'utilisateur.
 
 ## Résumé du projet
 

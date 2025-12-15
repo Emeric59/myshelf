@@ -367,11 +367,14 @@ export default function MovieDetailPage({ params }: { params: Promise<{ id: stri
               </div>
             </div>
 
-            {/* Comment */}
+            {/* Comment - Private note (not used by AI) */}
             <div>
-              <Label className="text-sm font-medium mb-2 block">Commentaire personnel</Label>
+              <Label className="text-sm font-medium mb-2 block">
+                Notes personnelles
+                <span className="text-xs text-muted-foreground ml-2 font-normal">(privé)</span>
+              </Label>
               <Textarea
-                placeholder="Mes pensées sur ce film..."
+                placeholder="Mes pensées, le contexte du visionnage..."
                 value={review.comment}
                 onChange={(e) => setReview(prev => ({ ...prev, comment: e.target.value }))}
                 rows={3}

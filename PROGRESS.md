@@ -5,10 +5,11 @@
 ## Statut actuel
 
 **Phase :** Phase 9 - Améliorations UX et features complémentaires
-**Dernière mise à jour :** 2025-12-15
+**Dernière mise à jour :** 2025-12-15 (session 2)
 **Build :** OK
 **Déployé :** https://myshelf-d69.pages.dev
 **État DB prod :** Vraies données (10 livres, 10 films, 10 séries avec IDs vérifiés)
+**Migration en attente :** 005_add_descriptions.sql (auth Cloudflare expirée)
 
 ---
 
@@ -103,6 +104,11 @@
 - [x] Filtre par type de média (Livres/Films/Séries) sur les recommandations
 - [x] Fix images Next.js pour Cloudflare Pages (`unoptimized: true`)
 - [x] Nettoyage migrations et reset DB pour vraies données
+- [x] **Rankings refactorisé** : groupes par étoiles (5, 4, 3, 2, 1) au lieu de Top 10
+- [x] **Notes personnelles** : label "privé" ajouté (non utilisé par l'IA)
+- [x] **Fix overflow mobile** : CSS global pour empêcher le scroll horizontal
+- [x] **QUESTIONS.md** : fichier pour questions en attente (référencé dans CLAUDE.md)
+- [ ] Descriptions/synopsis pour médias (migration 005 créée, à appliquer)
 - [ ] Export des données (optionnel)
 - [ ] Thème clair/sombre (optionnel)
 
@@ -116,6 +122,7 @@
 | `002_seed_tropes.sql` | 54 tropes + providers streaming | ✅ |
 | `003_reset_for_real_data.sql` | Reset des données (utilitaire) | ✅ |
 | `004_real_data_seed.sql` | Vraies données (10 livres, 10 films, 10 séries) | ✅ |
+| `005_add_descriptions.sql` | Descriptions/synopsis pour tous les médias | ⏳ (à appliquer) |
 
 > **Note :** La DB contient des données réelles avec des IDs vérifiés via les APIs officielles (Open Library + TMDB) le 2025-12-15.
 
@@ -177,7 +184,7 @@ src/
 │   ├── stats/
 │   │   ├── page.tsx                # Statistiques
 │   │   ├── goals/page.tsx          # Objectifs
-│   │   └── rankings/page.tsx       # Top 10 par catégorie
+│   │   └── rankings/page.tsx       # Favoris par étoiles (groupes)
 │   ├── settings/
 │   │   ├── page.tsx                # Paramètres
 │   │   ├── tropes/page.tsx         # Tropes
@@ -322,3 +329,6 @@ GEMINI_API_KEY=xxx
 17. **Mood recommendations** : Paramètre API corrigé (`query` au lieu de `message`)
 18. **Ajout depuis recommandations** : Type de recherche corrigé (singulier au lieu de pluriel)
 19. **Migrations nettoyées** : Suppression des migrations obsolètes, reset DB pour vraies données
+20. **Overflow mobile** : Ajout `overflow-x-hidden` global dans CSS pour empêcher scroll horizontal
+21. **Rankings redesign** : Passage de Top 10 à groupes par étoiles (5★ Coups de coeur, 4★ Excellents, etc.)
+22. **Notes personnelles** : Label mis à jour pour indiquer que c'est privé (non utilisé par IA)

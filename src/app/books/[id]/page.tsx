@@ -459,11 +459,14 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
 
-            {/* Comment */}
+            {/* Comment - Private note (not used by AI) */}
             <div>
-              <Label className="text-sm font-medium mb-2 block">Commentaire personnel</Label>
+              <Label className="text-sm font-medium mb-2 block">
+                Notes personnelles
+                <span className="text-xs text-muted-foreground ml-2 font-normal">(privé)</span>
+              </Label>
               <Textarea
-                placeholder="Mes pensées sur ce livre..."
+                placeholder="Mes pensées, souvenirs liés à cette lecture..."
                 value={review.comment}
                 onChange={(e) => setReview(prev => ({ ...prev, comment: e.target.value }))}
                 rows={3}

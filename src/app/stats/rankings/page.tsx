@@ -3,16 +3,15 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { ArrowLeft, Trophy, Book, Film, Tv, Loader2, Star } from "lucide-react"
+import { ArrowLeft, Book, Film, Tv, Loader2, Star, ChevronDown, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { BottomNav } from "@/components/layout"
 import { cn } from "@/lib/utils"
 
 type Category = "books" | "movies" | "shows"
 
-interface RankedMedia {
+interface RatedMedia {
   id: string
   title: string
   subtitle: string
@@ -21,9 +20,15 @@ interface RankedMedia {
   type: Category
 }
 
+interface RatingGroup {
+  rating: number
+  items: RatedMedia[]
+  expanded: boolean
+}
+
 export default function RankingsPage() {
   const [category, setCategory] = useState<Category>("books")
-  const [rankings, setRankings] = useState<RankedMedia[]>([])
+  const [ratingGroups, setRatingGroups] = useState<RatingGroup[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -48,43 +53,43 @@ export default function RankingsPage() {
         cover_url?: string
         poster_url?: string
         rating?: number
-        updated_at?: string
-        finished_at?: string
-        watched_at?: string
       }
 
       const data = await response.json() as Record<string, MediaItem[]>
       const items = data[cat] || data.books || data.movies || data.shows || []
 
-      // Filter items with ratings and sort by rating (then by date for ties)
-      const ranked: RankedMedia[] = items
-        .filter((item) => item.rating && item.rating > 0)
-        .sort((a, b) => {
-          const ratingDiff = (b.rating || 0) - (a.rating || 0)
-          if (ratingDiff !== 0) return ratingDiff
-          // En cas d'égalité, trier par date (plus récent en premier)
-          const dateA = a.finished_at || a.watched_at || a.updated_at || ""
-          const dateB = b.finished_at || b.watched_at || b.updated_at || ""
-          return dateB.localeCompare(dateA)
-        })
-        .slice(0, 10)
-        .map((item) => ({
-          // Utiliser book_id/movie_id/show_id pour les URLs de détail
-          id: item.book_id || item.movie_id || item.show_id || item.id || "",
-          title: item.title,
-          subtitle: item.author || item.director || item.creator || "",
-          rating: item.rating || 0,
-          posterUrl: item.cover_url || item.poster_url,
-          type: cat,
-        }))
+      // Group items by rating (5, 4, 3, 2, 1)
+      const groups: RatingGroup[] = [5, 4, 3, 2, 1].map(rating => ({
+        rating,
+        items: items
+          .filter((item) => item.rating === rating)
+          .map((item) => ({
+            id: item.book_id || item.movie_id || item.show_id || item.id || "",
+            title: item.title,
+            subtitle: item.author || item.director || item.creator || "",
+            rating: item.rating || 0,
+            posterUrl: item.cover_url || item.poster_url,
+            type: cat,
+          })),
+        expanded: rating >= 4, // Expand 5 and 4 stars by default
+      }))
 
-      setRankings(ranked)
+      // Filter out empty groups
+      setRatingGroups(groups.filter(g => g.items.length > 0))
     } catch (error) {
       console.error("Error fetching rankings:", error)
-      setRankings([])
+      setRatingGroups([])
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const toggleGroup = (rating: number) => {
+    setRatingGroups(prev =>
+      prev.map(g =>
+        g.rating === rating ? { ...g, expanded: !g.expanded } : g
+      )
+    )
   }
 
   const categories: { value: Category; label: string; icon: typeof Book }[] = [
@@ -93,23 +98,34 @@ export default function RankingsPage() {
     { value: "shows", label: "Séries", icon: Tv },
   ]
 
-  const getMedalColor = (index: number) => {
-    switch (index) {
-      case 0:
-        return "bg-yellow-500 text-yellow-950"
-      case 1:
-        return "bg-gray-300 text-gray-800"
-      case 2:
-        return "bg-amber-600 text-amber-950"
-      default:
-        return "bg-muted text-muted-foreground"
-    }
-  }
-
-  const getDetailUrl = (item: RankedMedia) => {
+  const getDetailUrl = (item: RatedMedia) => {
     const type = item.type === "books" ? "books" : item.type === "movies" ? "movies" : "shows"
     return `/${type}/${item.id}`
   }
+
+  const getRatingLabel = (rating: number) => {
+    switch (rating) {
+      case 5: return "Coups de coeur"
+      case 4: return "Excellents"
+      case 3: return "Bien"
+      case 2: return "Moyens"
+      case 1: return "Pas aimés"
+      default: return `${rating} étoiles`
+    }
+  }
+
+  const getRatingColor = (rating: number) => {
+    switch (rating) {
+      case 5: return "text-yellow-500"
+      case 4: return "text-emerald-500"
+      case 3: return "text-blue-500"
+      case 2: return "text-orange-500"
+      case 1: return "text-red-500"
+      default: return "text-muted-foreground"
+    }
+  }
+
+  const totalRated = ratingGroups.reduce((acc, g) => acc + g.items.length, 0)
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -121,7 +137,7 @@ export default function RankingsPage() {
               <ArrowLeft className="h-5 w-5" />
             </Link>
           </Button>
-          <h1 className="font-display font-semibold ml-2">Mes classements</h1>
+          <h1 className="font-display font-semibold ml-2">Mes favoris</h1>
         </div>
       </header>
 
@@ -142,78 +158,90 @@ export default function RankingsPage() {
           ))}
         </div>
 
-        {/* Rankings List */}
+        {/* Rating Groups */}
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-        ) : rankings.length === 0 ? (
+        ) : totalRated === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="font-medium mb-2">Pas encore de classement</h3>
+              <Star className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="font-medium mb-2">Aucune note pour l'instant</h3>
               <p className="text-sm text-muted-foreground">
-                Note tes {category === "books" ? "livres" : category === "movies" ? "films" : "séries"} pour voir ton top 10
+                Note tes {category === "books" ? "livres" : category === "movies" ? "films" : "séries"} pour les retrouver ici
               </p>
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
-            {rankings.map((item, index) => (
-              <Link key={item.id} href={getDetailUrl(item)}>
-                <Card className="hover:border-primary transition-colors">
-                  <CardContent className="p-3">
-                    <div className="flex items-center gap-3">
-                      {/* Rank Badge */}
-                      <div
-                        className={cn(
-                          "w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0",
-                          getMedalColor(index)
-                        )}
-                      >
-                        {index + 1}
-                      </div>
+          <div className="space-y-4">
+            {ratingGroups.map((group) => (
+              <div key={group.rating}>
+                {/* Group Header */}
+                <button
+                  onClick={() => toggleGroup(group.rating)}
+                  className="w-full flex items-center justify-between p-3 rounded-lg bg-card border hover:border-primary transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    {/* Stars */}
+                    <div className="flex">
+                      {Array.from({ length: group.rating }).map((_, i) => (
+                        <Star
+                          key={i}
+                          className={cn("h-4 w-4 fill-current", getRatingColor(group.rating))}
+                        />
+                      ))}
+                    </div>
+                    <span className="font-medium">{getRatingLabel(group.rating)}</span>
+                    <span className="text-sm text-muted-foreground">
+                      ({group.items.length})
+                    </span>
+                  </div>
+                  {group.expanded ? (
+                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </button>
 
-                      {/* Poster */}
-                      <div className="w-12 h-16 rounded overflow-hidden bg-muted flex-shrink-0">
-                        {item.posterUrl ? (
-                          <Image
-                            src={item.posterUrl}
-                            alt={item.title}
-                            width={48}
-                            height={64}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            {category === "books" ? (
-                              <Book className="h-5 w-5 text-muted-foreground" />
-                            ) : category === "movies" ? (
-                              <Film className="h-5 w-5 text-muted-foreground" />
+                {/* Group Items */}
+                {group.expanded && (
+                  <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                    {group.items.map((item) => (
+                      <Link key={item.id} href={getDetailUrl(item)}>
+                        <div className="group relative">
+                          {/* Poster */}
+                          <div className="aspect-[2/3] rounded-lg overflow-hidden bg-muted">
+                            {item.posterUrl ? (
+                              <Image
+                                src={item.posterUrl}
+                                alt={item.title}
+                                width={120}
+                                height={180}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                              />
                             ) : (
-                              <Tv className="h-5 w-5 text-muted-foreground" />
+                              <div className="w-full h-full flex items-center justify-center">
+                                {category === "books" ? (
+                                  <Book className="h-8 w-8 text-muted-foreground" />
+                                ) : category === "movies" ? (
+                                  <Film className="h-8 w-8 text-muted-foreground" />
+                                ) : (
+                                  <Tv className="h-8 w-8 text-muted-foreground" />
+                                )}
+                              </div>
                             )}
                           </div>
-                        )}
-                      </div>
-
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium truncate">{item.title}</h3>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {item.subtitle || "Inconnu"}
-                        </p>
-                      </div>
-
-                      {/* Rating */}
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <Star className="h-4 w-4 fill-primary text-primary" />
-                        <span className="font-semibold">{item.rating}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
+                          {/* Title */}
+                          <p className="mt-1 text-xs font-medium line-clamp-2 group-hover:text-primary transition-colors">
+                            {item.title}
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         )}
