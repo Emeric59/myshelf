@@ -85,6 +85,25 @@
 - **Librairie suggérée :** react-calendar ou custom grid
 - **Où :** Nouvelle page `/stats/calendar`
 
+### 3.6 Prochaines sorties (À FAIRE)
+- [ ] Liste des prochaines sorties pour les séries qu'on suit
+- **Cas d'usage :**
+  - Nouveau tome d'une série de livres qu'on lit
+  - Nouvelle saison d'une série TV qu'on regarde
+  - Suite d'un film (si annoncée)
+- **Sources de données :**
+  - Livres : Hardcover API (série info) ou Google Books
+  - Séries TV : TMDB API (`/tv/{id}` contient `next_episode_to_air`)
+  - Films : TMDB API (collections, sequels annoncés)
+- **UI possible :**
+  - Section "À venir" sur le dashboard
+  - Page dédiée `/upcoming` avec calendrier
+  - Notifications (optionnel, plus complexe)
+- **Données à stocker :**
+  - Lien livre → série de livres (hardcover_series_id)
+  - Date de sortie prévue (si connue)
+- **Où :** Nouvelle page `/upcoming` ou section sur dashboard
+
 ---
 
 ## Priorité 4 - Optionnel
@@ -93,4 +112,3 @@
 - [ ] Filtre note minimum (TMDB/utilisateur)
 - [ ] Partager une recommandation
 - [ ] Image "Currently reading/watching" pour réseaux sociaux
-- [ ] **Prochaines sorties** - Alertes sur les nouveaux tomes des séries de livres en cours
