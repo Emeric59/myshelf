@@ -1,43 +1,43 @@
 # Prochaine session - Idées d'implémentation
 
-## Recommandations IA
+## Dernière session (2025-12-16)
 
-### Images et navigation
-- Ajouter image livre dans les recos de l'IA
-- Ajouter la possibilité de cliquer sur une reco de l'IA pour avoir la fiche du livre/film/série, comme déjà utilisé dans la recherche
-- Mode "surprise" - reco aléatoire basée sur les goûts
-
-### Liste "Mes envies"
-- Sauvegarder une recommandation pour plus tard (sans l'ajouter à la bibliothèque)
-- Nouveau statut ou nouvelle table dédiée
+**Fait :**
+- Fix recherche livres : debounce 500ms → 700ms
+- Fix enrichissement Hardcover : fuzzy match avec Levenshtein (seuil 60%) au lieu de fallback aveugle `results[0]`
+- Élimine les faux positifs comme "The Marine Corps Gazette" pour une recherche "Fourth Wing"
 
 ---
 
-## Recherche avancée
+## Priorité 1 - Quick wins (implémentation rapide, UX immédiate)
 
-- Filtrer par genre en plus de l'année
-- Filtrer par note minimum (TMDB/utilisateur)
-- Recherche par tropes pour les livres
-
----
-
-## Bibliothèque
-
-- Corriger l'affichage du synopsis et l'avancer avant la possibilité de noter le livre/film/série
-- Filtres combinés (genre + statut)
-- Vue calendrier des lectures/visionnages
-- Export de la bibliothèque (CSV, JSON)
+- [ ] **Images dans les recos IA** - Ajouter image livre/film/série comme dans la recherche
+- [ ] **Clic sur reco → fiche détail** - Navigation vers /books/[id], /movies/[id], /shows/[id]
+- [ ] **Synopsis avant la note** - Corriger l'ordre d'affichage sur les fiches détail
 
 ---
 
-## Stats
+## Priorité 2 - Fonctionnalités à valeur ajoutée
 
-- Graphique d'évolution des lectures/visionnages par mois
-- Temps total passé à regarder des séries/films
+- [ ] **Liste "Mes envies"** - Sauvegarder une reco pour plus tard (sans l'ajouter à la bibliothèque)
+- [ ] **Filtre par genre** - Sur recherche et recommandations IA
+- [ ] **Export bibliothèque** - CSV et/ou JSON
 
 ---
 
-## Social (optionnel, single-user mais...)
+## Priorité 3 - Nice to have
 
-- Partager une recommandation
-- Générer une image "Currently reading/watching" pour les réseaux sociaux
+- [ ] **Mode surprise** - Reco aléatoire basée sur les goûts
+- [ ] **Temps total visionnage** - Stats séries/films
+- [ ] **Graphique évolution/mois** - Visualisation des lectures/visionnages
+- [ ] **Filtres combinés** - Genre + statut dans la bibliothèque
+- [ ] **Vue calendrier** - Lectures/visionnages par date
+
+---
+
+## Priorité 4 - Optionnel
+
+- [ ] Recherche par tropes (livres)
+- [ ] Filtre note minimum (TMDB/utilisateur)
+- [ ] Partager une recommandation
+- [ ] Image "Currently reading/watching" pour réseaux sociaux

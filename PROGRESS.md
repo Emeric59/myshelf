@@ -4,8 +4,8 @@
 
 ## Statut actuel
 
-**Phase :** Phase 13 - Gestion des suggestions refusées (TERMINÉE)
-**Dernière mise à jour :** 2025-12-16 (session 8 - page dismissed, flow "déjà vu/lu" amélioré)
+**Phase :** Phase 14 - Amélioration précision recherche (TERMINÉE)
+**Dernière mise à jour :** 2025-12-16 (session 9 - fix fuzzy match + debounce)
 **Build :** OK
 **Déployé :** https://myshelf-d69.pages.dev
 **État DB prod :** Vraies données avec descriptions en français (10 livres, 10 films, 10 séries)
@@ -161,6 +161,15 @@
 - [x] **Flow "Déjà vu/lu" amélioré** : Propose d'ajouter à la bibliothèque au lieu de juste dismiss
 - [x] **Ajout avec statut complété** : Médias ajoutés via ce flow ont le statut "lu"/"vu"
 - [x] **Lien dans paramètres** : Accès depuis /settings > Préférences > Suggestions refusées
+- [x] **Règle anti-making-of** : Gemini n'inclut plus les making-of/behind the scenes
+- [x] **Fix DismissDialog** : Reset du state à chaque ouverture du dialog
+
+### Phase 14 : Amélioration précision recherche - TERMINÉE
+- [x] **Debounce augmenté** : 500ms → 700ms pour réduire les requêtes intermédiaires
+- [x] **Fuzzy match intelligent** : Algorithme Levenshtein pour comparaison de titres
+- [x] **Seuil de similarité** : 60% minimum requis pour accepter un match Hardcover
+- [x] **Bonus auteur** : +15% si l'auteur correspond aussi (>70% similaire)
+- [x] **Élimination faux positifs** : Plus de pollution par des livres non pertinents ("The Marine Corps Gazette" pour "Fourth Wing")
 
 ---
 
@@ -406,6 +415,8 @@ HARDCOVER_API_KEY=xxx
 23. **Hardcover parsing** : Les tags sont des objets `{tag, tagSlug, category}` pas des strings simples
 24. **Tropes Hardcover** : Combinaison des catégories "Trope" et "Tag" (Hardcover utilise "Tag" pour les tropes)
 25. **Synopsis manquant** : Ajout de `description` et `pageCount` au payload d'ajout livre
+26. **Enrichissement pollué** : Fallback aveugle `results[0]` remplacé par fuzzy match avec seuil 60%
+27. **Debounce trop court** : 500ms → 700ms pour éviter requêtes intermédiaires
 
 ---
 
