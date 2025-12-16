@@ -179,7 +179,7 @@ export default function ShowDetailPage({ params }: { params: Promise<{ id: strin
     }
   }
 
-  const markEpisodeWatched = async (seasonNumber: number, episodeNumber: number, watched: boolean) => {
+  const markEpisodeWatched = async (seasonNumber: number, episodeNumber: number, watched: boolean, runtime?: number | null) => {
     try {
       if (watched) {
         await fetch("/api/episodes", {
@@ -191,7 +191,7 @@ export default function ShowDetailPage({ params }: { params: Promise<{ id: strin
         await fetch("/api/episodes", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ showId: id, seasonNumber, episodeNumber }),
+          body: JSON.stringify({ showId: id, seasonNumber, episodeNumber, runtime: runtime ?? undefined }),
         })
       }
       // Refresh data
@@ -205,12 +205,16 @@ export default function ShowDetailPage({ params }: { params: Promise<{ id: strin
     }
   }
 
-  const markSeasonWatched = async (seasonNumber: number, episodeCount: number) => {
+  const markSeasonWatched = async (seasonNumber: number) => {
+    // Get episode runtimes from seasonData if available
+    const runtimes = seasonData?.episodes?.map(ep => ep.runtime ?? 45) ?? []
+    const episodeCount = seasonData?.episodes?.length ?? 0
+
     try {
       await fetch("/api/episodes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ showId: id, seasonNumber, upToEpisode: episodeCount }),
+        body: JSON.stringify({ showId: id, seasonNumber, upToEpisode: episodeCount, runtimes }),
       })
       fetchEpisodeProgress()
       if (expandedSeason === seasonNumber) {
@@ -531,7 +535,7 @@ export default function ShowDetailPage({ params }: { params: Promise<{ id: strin
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => markSeasonWatched(seasonNum, episodeCount)}
+                              onClick={() => markSeasonWatched(seasonNum)}
                               disabled={isComplete}
                             >
                               <Check className="h-4 w-4 mr-1" />
@@ -558,7 +562,7 @@ export default function ShowDetailPage({ params }: { params: Promise<{ id: strin
                               {seasonData.episodes.map((episode) => (
                                 <button
                                   key={episode.episode_number}
-                                  onClick={() => markEpisodeWatched(seasonNum, episode.episode_number, episode.watched)}
+                                  onClick={() => markEpisodeWatched(seasonNum, episode.episode_number, episode.watched, episode.runtime)}
                                   className="w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors text-left"
                                 >
                                   {episode.watched ? (

@@ -147,14 +147,13 @@ export async function getStats(db: D1Database): Promise<StatsData> {
       WHERE um.status = 'watched'
     `).first(),
 
-    // Count episodes watched (from watched_episodes table)
-    // Join with shows to get episode_runtime, fallback to 45 min if NULL
+    // Count episodes watched and sum their stored runtimes
+    // Fallback to 45 min if runtime is NULL (old episodes before migration)
     db.prepare(`
       SELECT
         COUNT(*) as total_episodes,
-        SUM(COALESCE(s.episode_runtime, 45)) as total_minutes
+        SUM(COALESCE(we.runtime, 45)) as total_minutes
       FROM watched_episodes we
-      JOIN shows s ON we.show_id = s.id
     `).first(),
   ])
 

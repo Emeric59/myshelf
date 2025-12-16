@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
 /**
  * POST /api/episodes
  * Mark episode(s) as watched
- * Body: { showId, seasonNumber, episodeNumber } or { showId, seasonNumber, upToEpisode }
+ * Body: { showId, seasonNumber, episodeNumber, runtime? } or { showId, seasonNumber, upToEpisode, runtimes? }
  */
 export async function POST(request: NextRequest) {
   try {
@@ -142,9 +142,11 @@ export async function POST(request: NextRequest) {
       seasonNumber: number
       episodeNumber?: number
       upToEpisode?: number // Mark all episodes up to this one
+      runtime?: number // Duration of single episode in minutes
+      runtimes?: number[] // Durations for batch marking (index 0 = ep 1)
     }
 
-    const { showId, seasonNumber, episodeNumber, upToEpisode } = body
+    const { showId, seasonNumber, episodeNumber, upToEpisode, runtime, runtimes } = body
 
     if (!showId || !seasonNumber) {
       return NextResponse.json(
@@ -162,24 +164,28 @@ export async function POST(request: NextRequest) {
       // Mark all episodes from 1 to upToEpisode as watched
       const statements = []
       for (let ep = 1; ep <= upToEpisode; ep++) {
+        const epRuntime = runtimes?.[ep - 1] ?? 45 // Use provided runtime or default 45
         statements.push(
           db
             .prepare(
-              `INSERT OR IGNORE INTO watched_episodes (show_id, season_number, episode_number, watched_at)
-               VALUES (?, ?, ?, ?)`
+              `INSERT INTO watched_episodes (show_id, season_number, episode_number, watched_at, runtime)
+               VALUES (?, ?, ?, ?, ?)
+               ON CONFLICT(show_id, season_number, episode_number) DO UPDATE SET runtime = excluded.runtime`
             )
-            .bind(showId, seasonNumber, ep, now)
+            .bind(showId, seasonNumber, ep, now, epRuntime)
         )
       }
       await db.batch(statements)
     } else if (episodeNumber) {
       // Mark single episode as watched
+      const epRuntime = runtime ?? 45 // Use provided runtime or default 45
       await db
         .prepare(
-          `INSERT OR IGNORE INTO watched_episodes (show_id, season_number, episode_number, watched_at)
-           VALUES (?, ?, ?, ?)`
+          `INSERT INTO watched_episodes (show_id, season_number, episode_number, watched_at, runtime)
+           VALUES (?, ?, ?, ?, ?)
+           ON CONFLICT(show_id, season_number, episode_number) DO UPDATE SET runtime = excluded.runtime`
         )
-        .bind(showId, seasonNumber, episodeNumber, now)
+        .bind(showId, seasonNumber, episodeNumber, now, epRuntime)
         .run()
     } else {
       return NextResponse.json(
