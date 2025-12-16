@@ -3,32 +3,21 @@
 ## Dernière session (2025-12-16)
 
 **Fait :**
+- **Graphiques d'évolution** : Nouvelle page `/stats/charts` avec recharts
+- **API charts** : `/api/stats/charts` avec paramètres période, granularité
+- **Sélecteurs multiples** : Période (année, 12 mois, custom), granularité (mois/semaine), métrique (count/time/pages)
+- **Toggle graphique** : Basculer entre barres et lignes
+- **Vue combinée** : Graphique avec livres/films/séries superposés
+- **Graphiques individuels** : Un graphique par type de média
+- **Lien depuis stats** : Card "Graphiques" ajoutée à `/stats`
+
+**Session précédente :**
 - Images dans les recommandations IA (enrichissement automatique via API)
 - Modal de détail cliquable sur les recos IA (avec boutons Ajouter / Ne plus suggérer)
-- Fermeture automatique du modal après ajout à la bibliothèque
-- Synopsis déplacé après progression, avant note/avis sur les fiches détail
-- Nettoyage HTML dans les synopsis (balises `<br>`, `<i>`, `<b>`, entités HTML)
-- Auto-mark tous les épisodes vus quand série = "Terminée"
-- Nouveau composant `RecommendationCard` pour les recos IA
-- Fonction utilitaire `stripHtml()` dans `lib/utils.ts`
-- **Images dans suggestions par mood** : Refactorisé `/recommendations` pour utiliser `RecommendationCard`
-- **Liste "Mes envies"** : Table DB `wishlist`, API `/api/wishlist`, page `/wishlist`
-- **Bouton wishlist sur recherche** : Cœur sur chaque MediaCard + bouton "Mes envies" dans le modal
-- **Filtre par genre** : Recherche, recos mood, chat IA
-- **Fix statut recherche** : API `/api/search` vérifie maintenant `in_library` et `in_wishlist` via DB
-- **Fix modal state** : Reset du state quand on change d'item + callback `onWishlistAdd` pour sync parent
-- **Filtres combinés** : Genre + statut sur pages `/books`, `/movies`, `/shows`
-- **Temps total visionnage** : Stats sur `/stats` avec lecture estimée et visionnage réel
-- **Mode surprise** : Bouton sur `/recommendations` pour 3 classiques modernes (livre/film/série)
-
-**Bugs corrigés :**
-- Items déjà dans bibliothèque/wishlist maintenant correctement marqués dans les résultats de recherche
-- Modal ne montre plus "Sauvegardé" pour tous les items (state reset avec useEffect)
-- Sauvegarder depuis modal met à jour la carte en dessous (callback vers parent)
-- Progression et note des livres ne se sauvegardaient pas (API PATCH ne gérait que le status)
-- Stats temps séries : stockage du runtime par épisode (migration 011)
-- Stats temps livres : inclut maintenant les pages des livres en cours (`current_page`)
-- Message IA surprise trop long : prompt modifié pour max 15-20 mots
+- Liste "Mes envies" : Table DB `wishlist`, API `/api/wishlist`, page `/wishlist`
+- Filtres combinés : Genre + statut sur pages `/books`, `/movies`, `/shows`
+- Temps total visionnage : Stats sur `/stats` avec lecture estimée et visionnage réel
+- Mode surprise : Bouton sur `/recommendations` pour 3 classiques modernes (livre/film/série)
 
 ---
 
@@ -47,7 +36,7 @@
 
 ---
 
-## Priorité 3 - Nice to have (TERMINÉ PARTIELLEMENT)
+## Priorité 3 - Nice to have (QUASI TERMINÉ)
 
 ### 3.1 Filtres combinés (TERMINÉ)
 - [x] Genre + statut dans la bibliothèque
@@ -69,18 +58,20 @@
 - **Contraintes :** Classiques modernes (2010+), bien notés, basés sur goûts utilisateur
 - **UI :** Card "Surprise" avec bouton Go, message IA + 3 recommandations
 
-### 3.4 Graphique évolution/mois (À FAIRE)
-- [ ] Visualisation des lectures/visionnages dans le temps
-- **Période :** Configurable (année en cours, 12 derniers mois, custom)
+### 3.4 Graphique évolution/mois (TERMINÉ)
+- [x] Visualisation des lectures/visionnages dans le temps
+- **Période :** Configurable (année en cours, 12 derniers mois, année précédente, custom)
+- **Granularité :** Par mois ou par semaine
 - **Métriques multiples :**
   - Nombre de médias terminés
   - Temps passé (heures)
   - Pages lues (livres)
 - **Graphiques :**
+  - 1 graphique combiné (tous médias)
   - 1 graphique par type de média (livres, films, séries)
-  - 1 graphique total combiné
-- **Librairie suggérée :** recharts ou chart.js
-- **Où :** Nouvelle page `/stats/charts` ou section dans `/stats`
+- **Toggle :** Basculer entre barres et lignes
+- **Librairie :** recharts
+- **Où :** Nouvelle page `/stats/charts` avec lien depuis `/stats`
 
 ### 3.5 Vue calendrier (COMPLEXE - À FAIRE PLUS TARD)
 - [ ] Calendrier des lectures/visionnages

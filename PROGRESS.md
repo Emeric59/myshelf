@@ -4,8 +4,8 @@
 
 ## Statut actuel
 
-**Phase :** Phase 17 - Filtres combinés, stats temps et mode surprise (TERMINÉE)
-**Dernière mise à jour :** 2025-12-16 (session 12 - filtres combinés + temps + surprise)
+**Phase :** Phase 18 - Graphiques d'évolution (TERMINÉE)
+**Dernière mise à jour :** 2025-12-16 (session 13 - graphiques évolution temporelle)
 **Build :** OK
 **Déployé :** https://myshelf-d69.pages.dev
 **État DB prod :** Vraies données avec descriptions en français (10 livres, 10 films, 10 séries)
@@ -209,6 +209,20 @@
 - [x] **Gemini surprise** : Prompt spécial pour classiques modernes (2010+), bien notés, basés sur goûts
 - [x] **Message IA surprise** : Affichage du message enthousiaste de Gemini avant les 3 recos
 
+### Phase 18 : Graphiques d'évolution - TERMINÉE
+- [x] **Librairie recharts** : Installation de recharts pour visualisation de données
+- [x] **API /api/stats/charts** : Endpoint pour récupérer données temporelles par période
+- [x] **Types ChartDataPoint** : Structure pour données de graphiques (count, time, pages)
+- [x] **Page /stats/charts** : Interface complète avec graphiques interactifs
+- [x] **Sélecteur période** : Année en cours, 12 derniers mois, année précédente, personnalisé
+- [x] **Sélecteur granularité** : Par mois ou par semaine
+- [x] **Sélecteur métrique** : Nombre de médias, temps passé (heures), pages lues
+- [x] **Toggle type graphique** : Basculer entre barres et lignes
+- [x] **Vue combinée** : Graphique avec les 3 types de médias superposés
+- [x] **Graphiques individuels** : Un graphique par type (livres, films, séries)
+- [x] **Résumé période** : Cards avec totaux de la période sélectionnée
+- [x] **Lien depuis /stats** : Card "Graphiques" ajoutée à la page stats principale
+
 ---
 
 ## Migrations D1
@@ -242,6 +256,7 @@
 | `/api/reviews` | GET, POST, DELETE | Gestion des avis |
 | `/api/tropes` | GET, PATCH | Tropes et préférences |
 | `/api/stats` | GET | Statistiques globales |
+| `/api/stats/charts` | GET | Données pour graphiques temporels |
 | `/api/goals` | GET, POST | Objectifs annuels |
 | `/api/highlights` | GET, POST, PATCH, DELETE | Passages favoris |
 | `/api/recommendations/ask` | POST | Recommandations IA (Gemini 2.5 Flash) |
@@ -290,6 +305,7 @@ src/
 │   │   └── ask/page.tsx            # Chat IA
 │   ├── stats/
 │   │   ├── page.tsx                # Statistiques
+│   │   ├── charts/page.tsx         # Graphiques d'évolution
 │   │   ├── goals/page.tsx          # Objectifs
 │   │   └── rankings/page.tsx       # Favoris par étoiles (groupes)
 │   ├── settings/
@@ -325,7 +341,6 @@ src/
 > Voir **NEXT_SESSION.md** pour les idées détaillées de la prochaine session.
 
 **À faire (Priorité 3 restante) :**
-- Graphique évolution/mois (recharts ou chart.js)
 - Vue calendrier lectures/visionnages
 
 **Optionnelles (Priorité 4) :**

@@ -279,3 +279,252 @@ export async function updateGoals(
 
   await Promise.all(updates)
 }
+
+// Types pour les données de graphiques
+export interface ChartDataPoint {
+  period: string // Format: "2025-01" pour mois, "2025-W01" pour semaine
+  label: string // Label lisible: "Jan 2025" ou "Sem 1"
+  books: number
+  movies: number
+  shows: number
+  total: number
+  // Temps en minutes
+  booksMinutes: number
+  moviesMinutes: number
+  showsMinutes: number
+  totalMinutes: number
+  // Pages lues (livres seulement)
+  pagesRead: number
+}
+
+export interface ChartStatsData {
+  data: ChartDataPoint[]
+  totals: {
+    books: number
+    movies: number
+    shows: number
+    total: number
+    totalMinutes: number
+    pagesRead: number
+  }
+}
+
+// Récupérer les statistiques pour les graphiques
+export async function getChartStats(
+  db: D1Database,
+  startDate: string,
+  endDate: string,
+  granularity: 'week' | 'month'
+): Promise<ChartStatsData> {
+  // Générer tous les périodes entre startDate et endDate
+  const periods = generatePeriods(startDate, endDate, granularity)
+
+  // Requêtes pour chaque type de média
+  const [booksData, moviesData, showsData, booksPages, moviesTime, showsTime] = await Promise.all([
+    // Nombre de livres terminés par période
+    db.prepare(`
+      SELECT
+        ${granularity === 'month'
+          ? "strftime('%Y-%m', finished_at)"
+          : "strftime('%Y-W%W', finished_at)"
+        } as period,
+        COUNT(*) as count
+      FROM user_books
+      WHERE status = 'read'
+        AND finished_at >= ? AND finished_at <= ?
+      GROUP BY period
+    `).bind(startDate, endDate).all(),
+
+    // Nombre de films vus par période
+    db.prepare(`
+      SELECT
+        ${granularity === 'month'
+          ? "strftime('%Y-%m', watched_at)"
+          : "strftime('%Y-W%W', watched_at)"
+        } as period,
+        COUNT(*) as count
+      FROM user_movies
+      WHERE status = 'watched'
+        AND watched_at >= ? AND watched_at <= ?
+      GROUP BY period
+    `).bind(startDate, endDate).all(),
+
+    // Nombre de séries terminées par période
+    db.prepare(`
+      SELECT
+        ${granularity === 'month'
+          ? "strftime('%Y-%m', finished_at)"
+          : "strftime('%Y-W%W', finished_at)"
+        } as period,
+        COUNT(*) as count
+      FROM user_shows
+      WHERE status = 'watched'
+        AND finished_at >= ? AND finished_at <= ?
+      GROUP BY period
+    `).bind(startDate, endDate).all(),
+
+    // Pages lues par période (livres terminés)
+    db.prepare(`
+      SELECT
+        ${granularity === 'month'
+          ? "strftime('%Y-%m', ub.finished_at)"
+          : "strftime('%Y-W%W', ub.finished_at)"
+        } as period,
+        SUM(COALESCE(b.page_count, 0)) as pages
+      FROM user_books ub
+      JOIN books b ON ub.book_id = b.id
+      WHERE ub.status = 'read'
+        AND ub.finished_at >= ? AND ub.finished_at <= ?
+      GROUP BY period
+    `).bind(startDate, endDate).all(),
+
+    // Temps de visionnage films par période
+    db.prepare(`
+      SELECT
+        ${granularity === 'month'
+          ? "strftime('%Y-%m', um.watched_at)"
+          : "strftime('%Y-W%W', um.watched_at)"
+        } as period,
+        SUM(COALESCE(m.runtime, 0)) as minutes
+      FROM user_movies um
+      JOIN movies m ON um.movie_id = m.id
+      WHERE um.status = 'watched'
+        AND um.watched_at >= ? AND um.watched_at <= ?
+      GROUP BY period
+    `).bind(startDate, endDate).all(),
+
+    // Temps de visionnage séries par période (basé sur episodes watched_at)
+    db.prepare(`
+      SELECT
+        ${granularity === 'month'
+          ? "strftime('%Y-%m', we.watched_at)"
+          : "strftime('%Y-W%W', we.watched_at)"
+        } as period,
+        SUM(COALESCE(we.runtime, 45)) as minutes
+      FROM watched_episodes we
+      WHERE we.watched_at >= ? AND we.watched_at <= ?
+      GROUP BY period
+    `).bind(startDate, endDate).all(),
+  ])
+
+  // Convertir les résultats en maps pour un accès rapide
+  const booksMap = new Map(
+    (booksData.results as Array<{ period: string; count: number }>)
+      .map(r => [r.period, r.count])
+  )
+  const moviesMap = new Map(
+    (moviesData.results as Array<{ period: string; count: number }>)
+      .map(r => [r.period, r.count])
+  )
+  const showsMap = new Map(
+    (showsData.results as Array<{ period: string; count: number }>)
+      .map(r => [r.period, r.count])
+  )
+  const booksPagesMap = new Map(
+    (booksPages.results as Array<{ period: string; pages: number }>)
+      .map(r => [r.period, r.pages])
+  )
+  const moviesTimeMap = new Map(
+    (moviesTime.results as Array<{ period: string; minutes: number }>)
+      .map(r => [r.period, r.minutes])
+  )
+  const showsTimeMap = new Map(
+    (showsTime.results as Array<{ period: string; minutes: number }>)
+      .map(r => [r.period, r.minutes])
+  )
+
+  // Construire les données pour chaque période
+  const data: ChartDataPoint[] = periods.map(({ period, label }) => {
+    const books = booksMap.get(period) || 0
+    const movies = moviesMap.get(period) || 0
+    const shows = showsMap.get(period) || 0
+    const pagesRead = booksPagesMap.get(period) || 0
+    const moviesMinutes = moviesTimeMap.get(period) || 0
+    const showsMinutes = showsTimeMap.get(period) || 0
+    const booksMinutes = pagesRead * READING_MINUTES_PER_PAGE
+
+    return {
+      period,
+      label,
+      books,
+      movies,
+      shows,
+      total: books + movies + shows,
+      booksMinutes,
+      moviesMinutes,
+      showsMinutes,
+      totalMinutes: booksMinutes + moviesMinutes + showsMinutes,
+      pagesRead,
+    }
+  })
+
+  // Calculer les totaux
+  const totals = data.reduce(
+    (acc, d) => ({
+      books: acc.books + d.books,
+      movies: acc.movies + d.movies,
+      shows: acc.shows + d.shows,
+      total: acc.total + d.total,
+      totalMinutes: acc.totalMinutes + d.totalMinutes,
+      pagesRead: acc.pagesRead + d.pagesRead,
+    }),
+    { books: 0, movies: 0, shows: 0, total: 0, totalMinutes: 0, pagesRead: 0 }
+  )
+
+  return { data, totals }
+}
+
+// Générer toutes les périodes entre deux dates
+function generatePeriods(
+  startDate: string,
+  endDate: string,
+  granularity: 'week' | 'month'
+): Array<{ period: string; label: string }> {
+  const periods: Array<{ period: string; label: string }> = []
+  const start = new Date(startDate)
+  const end = new Date(endDate)
+
+  const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc']
+
+  if (granularity === 'month') {
+    // Parcourir mois par mois
+    const current = new Date(start.getFullYear(), start.getMonth(), 1)
+    while (current <= end) {
+      const year = current.getFullYear()
+      const month = String(current.getMonth() + 1).padStart(2, '0')
+      periods.push({
+        period: `${year}-${month}`,
+        label: `${monthNames[current.getMonth()]} ${year}`,
+      })
+      current.setMonth(current.getMonth() + 1)
+    }
+  } else {
+    // Parcourir semaine par semaine
+    // Trouver le premier lundi >= startDate
+    const current = new Date(start)
+    const dayOfWeek = current.getDay()
+    const daysToMonday = dayOfWeek === 0 ? 1 : (dayOfWeek === 1 ? 0 : 8 - dayOfWeek)
+    current.setDate(current.getDate() + daysToMonday)
+
+    while (current <= end) {
+      const year = current.getFullYear()
+      const weekNum = getWeekNumber(current)
+      periods.push({
+        period: `${year}-W${String(weekNum).padStart(2, '0')}`,
+        label: `Sem ${weekNum}`,
+      })
+      current.setDate(current.getDate() + 7)
+    }
+  }
+
+  return periods
+}
+
+// Obtenir le numéro de semaine ISO
+function getWeekNumber(date: Date): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+  const dayNum = d.getUTCDay() || 7
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum)
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7)
+}

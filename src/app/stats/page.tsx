@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { BarChart3, Target, Trophy, Book, Film, Tv, TrendingUp, Loader2, Clock } from "lucide-react"
+import { BarChart3, Target, Trophy, Book, Film, Tv, TrendingUp, Loader2, Clock, LineChart } from "lucide-react"
 import { Header, PageHeader } from "@/components/layout"
 import { BottomNav } from "@/components/layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -245,8 +245,27 @@ export default function StatsPage() {
           </div>
         </section>
 
-        {/* Rankings Link */}
-        <section className="mb-6">
+        {/* Links to sub-pages */}
+        <section className="mb-6 space-y-3">
+          <Link href="/stats/charts">
+            <Card className="hover:border-primary transition-colors">
+              <CardContent className="pt-4">
+                <div className="flex items-center gap-4">
+                  <div className="p-2 rounded-full bg-primary/10">
+                    <LineChart className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-medium">Graphiques</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Évolution dans le temps
+                    </p>
+                  </div>
+                  <TrendingUp className="h-5 w-5 text-muted-foreground" />
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
           <Link href="/stats/rankings">
             <Card className="hover:border-primary transition-colors">
               <CardContent className="pt-4">
