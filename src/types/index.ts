@@ -251,6 +251,7 @@ export interface SearchResult {
   year?: string
   rating?: number
   in_library?: boolean
+  in_wishlist?: boolean
   library_status?: BookStatus | MovieStatus | ShowStatus
   // Book-specific enrichment data
   description?: string

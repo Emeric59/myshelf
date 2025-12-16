@@ -219,3 +219,16 @@ export async function countBooksByStatus(
 
   return counts
 }
+
+// Récupérer tous les IDs de livres dans la bibliothèque (pour batch check)
+export async function getLibraryBookIds(db: D1Database): Promise<Set<string>> {
+  const result = await db
+    .prepare('SELECT book_id FROM user_books')
+    .all()
+
+  const ids = new Set<string>()
+  for (const row of result.results) {
+    ids.add(row.book_id as string)
+  }
+  return ids
+}

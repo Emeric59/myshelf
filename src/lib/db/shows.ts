@@ -216,3 +216,16 @@ export async function countShowsByStatus(
 
   return counts
 }
+
+// Récupérer tous les IDs de séries dans la bibliothèque (pour batch check)
+export async function getLibraryShowIds(db: D1Database): Promise<Set<string>> {
+  const result = await db
+    .prepare('SELECT show_id FROM user_shows')
+    .all()
+
+  const ids = new Set<string>()
+  for (const row of result.results) {
+    ids.add(row.show_id as string)
+  }
+  return ids
+}

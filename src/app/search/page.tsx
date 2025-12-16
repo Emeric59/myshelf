@@ -82,7 +82,17 @@ function SearchContent() {
       if (!response.ok) throw new Error("Search failed")
 
       const data = await response.json() as { results: SearchResult[] }
-      setResults(data.results || [])
+      const searchResults = data.results || []
+      setResults(searchResults)
+
+      // Initialize wishlistItems from API response
+      const wishlistFromApi = new Set<string>()
+      for (const r of searchResults) {
+        if (r.in_wishlist) {
+          wishlistFromApi.add(`${r.type}-${r.id}`)
+        }
+      }
+      setWishlistItems(wishlistFromApi)
     } catch (error) {
       console.error("Search error:", error)
       setResults([])
@@ -185,6 +195,14 @@ function SearchContent() {
 
       if (res.ok || res.status === 409) {
         setWishlistItems((prev) => new Set(prev).add(key))
+        // Also update results to mark as in_wishlist
+        setResults((prev) =>
+          prev.map((r) =>
+            r.id === result.id && r.type === result.type
+              ? { ...r, in_wishlist: true }
+              : r
+          )
+        )
       } else {
         console.error("Wishlist API error:", res.status)
         alert("Erreur lors de la sauvegarde.")
@@ -198,6 +216,24 @@ function SearchContent() {
         next.delete(key)
         return next
       })
+    }
+  }
+
+  // Handler for modal wishlist add callback
+  const handleModalWishlistAdd = (result: SearchResult) => {
+    const key = `${result.type}-${result.id}`
+    setWishlistItems((prev) => new Set(prev).add(key))
+    // Update results to mark as in_wishlist
+    setResults((prev) =>
+      prev.map((r) =>
+        r.id === result.id && r.type === result.type
+          ? { ...r, in_wishlist: true }
+          : r
+      )
+    )
+    // Also update selectedResult if it's the same
+    if (selectedResult?.id === result.id && selectedResult?.type === result.type) {
+      setSelectedResult({ ...result, in_wishlist: true })
     }
   }
 
@@ -472,6 +508,7 @@ function SearchContent() {
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
         onAdd={handleAddToLibrary}
+        onWishlistAdd={handleModalWishlistAdd}
         isAdding={isAdding}
       />
 

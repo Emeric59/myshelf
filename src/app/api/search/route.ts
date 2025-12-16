@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
+import { getRequestContext } from "@cloudflare/next-on-pages"
 import {
   searchBooksMultiSource,
   searchMovies,
   searchShows,
   getImageUrl,
 } from "@/lib/api"
+import {
+  getLibraryBookIds,
+  getLibraryMovieIds,
+  getLibraryShowIds,
+  getWishlistStatusBatch,
+} from "@/lib/db"
 import type { SearchResult, MediaType } from "@/types"
 
 // Runtime edge for Cloudflare
@@ -37,6 +44,18 @@ export async function GET(request: NextRequest) {
   const results: SearchResult[] = []
 
   try {
+    // Get database for library/wishlist checks
+    const { env } = getRequestContext()
+    const db = env.DB
+
+    // Fetch library and wishlist status in parallel with search
+    const [libraryBookIds, libraryMovieIds, libraryShowIds, wishlistStatus] = await Promise.all([
+      getLibraryBookIds(db),
+      getLibraryMovieIds(db),
+      getLibraryShowIds(db),
+      getWishlistStatusBatch(db),
+    ])
+
     // Search based on type filter
     const searchPromises: Promise<void>[] = []
 
@@ -121,8 +140,33 @@ export async function GET(request: NextRequest) {
     // Apply year filter
     const filteredResults = filterByYear(results, minYear)
 
+    // Add library and wishlist status to each result
+    const enrichedResults = filteredResults.map((result) => {
+      // Check library status
+      let inLibrary = false
+      if (result.type === "book") {
+        inLibrary = libraryBookIds.has(result.id)
+      } else if (result.type === "movie") {
+        inLibrary = libraryMovieIds.has(result.id)
+      } else if (result.type === "show") {
+        inLibrary = libraryShowIds.has(result.id)
+      }
+
+      // Check wishlist status (by external ID first, then by title)
+      const wishlistKeyById = `${result.type}-${result.id}`
+      const wishlistKeyByTitle = `${result.type}-${result.title.toLowerCase()}`
+      const inWishlist = wishlistStatus.byExternalId.has(wishlistKeyById) ||
+                         wishlistStatus.byTitle.has(wishlistKeyByTitle)
+
+      return {
+        ...result,
+        in_library: inLibrary,
+        in_wishlist: inWishlist,
+      }
+    })
+
     return NextResponse.json({
-      results: filteredResults,
+      results: enrichedResults,
       query,
       type,
       minYear,

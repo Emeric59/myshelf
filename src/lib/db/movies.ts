@@ -186,3 +186,16 @@ export async function countMoviesByStatus(
 
   return counts
 }
+
+// Récupérer tous les IDs de films dans la bibliothèque (pour batch check)
+export async function getLibraryMovieIds(db: D1Database): Promise<Set<string>> {
+  const result = await db
+    .prepare('SELECT movie_id FROM user_movies')
+    .all()
+
+  const ids = new Set<string>()
+  for (const row of result.results) {
+    ids.add(row.movie_id as string)
+  }
+  return ids
+}

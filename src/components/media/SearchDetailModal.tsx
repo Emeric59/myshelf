@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Book, Film, Tv, Plus, Check, Loader2, Heart } from "lucide-react"
 import {
@@ -40,6 +40,7 @@ interface SearchDetailModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onAdd: (result: SearchResult) => Promise<void>
+  onWishlistAdd?: (result: SearchResult) => void
   isAdding?: boolean
 }
 
@@ -60,10 +61,18 @@ export function SearchDetailModal({
   open,
   onOpenChange,
   onAdd,
+  onWishlistAdd,
   isAdding = false,
 }: SearchDetailModalProps) {
   const [isSavingWishlist, setIsSavingWishlist] = useState(false)
   const [savedToWishlist, setSavedToWishlist] = useState(false)
+
+  // Reset savedToWishlist when result changes or use initial in_wishlist value
+  useEffect(() => {
+    if (result) {
+      setSavedToWishlist(result.in_wishlist || false)
+    }
+  }, [result?.id, result?.type, result?.in_wishlist])
 
   if (!result) return null
 
@@ -93,6 +102,8 @@ export function SearchDetailModal({
       })
       if (res.ok || res.status === 409) {
         setSavedToWishlist(true)
+        // Notify parent to update its state
+        onWishlistAdd?.(result)
         onOpenChange(false)
       } else {
         const errorData = await res.json().catch(() => ({}))

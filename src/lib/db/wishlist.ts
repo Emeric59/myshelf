@@ -171,3 +171,29 @@ export async function getWishlistCountByType(
     count: row.count as number,
   }))
 }
+
+// Vérifier en batch quels items sont dans la wishlist
+// Retourne un Set de clés "type-externalId" ou "type-title"
+export async function getWishlistStatusBatch(
+  db: D1Database
+): Promise<{ byExternalId: Set<string>; byTitle: Set<string> }> {
+  const result = await db
+    .prepare('SELECT media_type, external_id, title FROM wishlist')
+    .all()
+
+  const byExternalId = new Set<string>()
+  const byTitle = new Set<string>()
+
+  for (const row of result.results) {
+    const mediaType = row.media_type as string
+    const externalId = row.external_id as string | null
+    const title = row.title as string
+
+    if (externalId) {
+      byExternalId.add(`${mediaType}-${externalId}`)
+    }
+    byTitle.add(`${mediaType}-${title.toLowerCase()}`)
+  }
+
+  return { byExternalId, byTitle }
+}
