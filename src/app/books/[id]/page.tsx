@@ -361,7 +361,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
 
         {/* Genres, Tropes, Moods */}
         {(book.genres?.length || book.tropes?.length || book.moods?.length) && (
-          <Card className="mt-6">
+          <Card className="mt-4">
             <CardContent className="p-4 space-y-4">
               {/* Genres */}
               {book.genres && book.genres.length > 0 && (
@@ -462,6 +462,18 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
                 />
                 <span className="text-sm text-muted-foreground">/ {book.page_count} pages</span>
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Synopsis */}
+        {book.description && (
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="text-lg">Synopsis</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <p className="text-sm text-muted-foreground">{book.description}</p>
             </CardContent>
           </Card>
         )}
@@ -633,17 +645,6 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
           </CardContent>
         </Card>
 
-        {/* Description */}
-        {book.description && (
-          <Card className="mt-4">
-            <CardHeader>
-              <CardTitle className="text-lg">Synopsis</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">{book.description}</p>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   )

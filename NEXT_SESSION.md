@@ -3,17 +3,18 @@
 ## Dernière session (2025-12-16)
 
 **Fait :**
-- Fix recherche livres : debounce 500ms → 700ms
-- Fix enrichissement Hardcover : fuzzy match avec Levenshtein (seuil 60%) au lieu de fallback aveugle `results[0]`
-- Élimine les faux positifs comme "The Marine Corps Gazette" pour une recherche "Fourth Wing"
+- Images dans les recommandations IA (enrichissement automatique via API)
+- Modal de détail cliquable sur les recos IA (avec boutons Ajouter / Ne plus suggérer)
+- Synopsis déplacé en haut des fiches détail (avant genres/statut/note)
+- Nouveau composant `RecommendationCard` pour les recos IA
 
 ---
 
 ## Priorité 1 - Quick wins (implémentation rapide, UX immédiate)
 
-- [ ] **Images dans les recos IA** - Ajouter image livre/film/série comme dans la recherche
-- [ ] **Clic sur reco → fiche détail** - Navigation vers /books/[id], /movies/[id], /shows/[id]
-- [ ] **Synopsis avant la note** - Corriger l'ordre d'affichage sur les fiches détail
+- [x] **Images dans les recos IA** - Ajouter image livre/film/série comme dans la recherche
+- [x] **Clic sur reco → fiche détail** - Modal de détail avec synopsis, genres, tropes, etc.
+- [x] **Synopsis avant la note** - Corrigé sur les 3 pages de détail
 
 ---
 

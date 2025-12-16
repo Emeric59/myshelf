@@ -586,6 +586,18 @@ export default function ShowDetailPage({ params }: { params: Promise<{ id: strin
           </Card>
         )}
 
+        {/* Synopsis */}
+        {show.description && (
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="text-lg">Synopsis</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <p className="text-sm text-muted-foreground">{show.description}</p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Rating */}
         <Card className="mt-4">
           <CardContent className="p-4">
@@ -663,17 +675,6 @@ export default function ShowDetailPage({ params }: { params: Promise<{ id: strin
           </CardContent>
         </Card>
 
-        {/* Description */}
-        {show.description && (
-          <Card className="mt-4">
-            <CardHeader>
-              <CardTitle className="text-lg">Synopsis</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">{show.description}</p>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   )

@@ -1,13 +1,12 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { ArrowLeft, Send, Sparkles, Loader2, Book, Film, Tv, Check, X } from "lucide-react"
+import { ArrowLeft, Send, Sparkles, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
 import { Slider } from "@/components/ui/slider"
-import { DismissDialog } from "@/components/media"
+import { DismissDialog, RecommendationCard } from "@/components/media"
 import { cn } from "@/lib/utils"
 
 const CURRENT_YEAR = new Date().getFullYear()
@@ -17,10 +16,8 @@ interface RecommendationItem {
   type: "book" | "movie" | "show"
   title: string
   subtitle?: string
-  image_url?: string
   reason: string
   added?: boolean
-  loading?: boolean
 }
 
 interface Message {
@@ -62,52 +59,43 @@ export default function AskPage() {
     scrollToBottom()
   }, [messages])
 
-  // Search for media and add to library
-  const handleAddToLibrary = async (messageId: string, recoId: string, reco: RecommendationItem) => {
-    // Mark as loading
-    setMessages(prev => prev.map(msg => {
-      if (msg.id === messageId && msg.recommendations) {
-        return {
-          ...msg,
-          recommendations: msg.recommendations.map(r =>
-            r.id === recoId ? { ...r, loading: true } : r
-          )
-        }
-      }
-      return msg
-    }))
+  // Add to library helper
+  const addToLibrary = async (reco: RecommendationItem, status?: string) => {
+    // Search for the media first
+    const searchResponse = await fetch(
+      `/api/search?q=${encodeURIComponent(reco.title)}&type=${reco.type}`
+    )
+    const searchData = await searchResponse.json() as { results?: Array<{ id: string; title: string }> }
 
+    if (!searchData.results || searchData.results.length === 0) {
+      throw new Error('Media not found')
+    }
+
+    // Get the first match
+    const media = searchData.results[0]
+
+    // Add to library based on type
+    const endpoint = reco.type === 'book' ? '/api/books' : reco.type === 'movie' ? '/api/movies' : '/api/shows'
+    const defaultStatus = reco.type === 'book' ? 'to_read' : 'to_watch'
+
+    await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: media.id, status: status || defaultStatus }),
+    })
+  }
+
+  // Handle add from recommendation card
+  const handleAddFromCard = async (messageId: string, recoId: string, reco: RecommendationItem) => {
     try {
-      // Search for the media first
-      const searchResponse = await fetch(
-        `/api/search?q=${encodeURIComponent(reco.title)}&type=${reco.type}`
-      )
-      const searchData = await searchResponse.json() as { results?: Array<{ id: string; title: string }> }
-
-      if (!searchData.results || searchData.results.length === 0) {
-        throw new Error('Media not found')
-      }
-
-      // Get the first match
-      const media = searchData.results[0]
-
-      // Add to library based on type
-      const endpoint = reco.type === 'book' ? '/api/books' : reco.type === 'movie' ? '/api/movies' : '/api/shows'
-      const status = reco.type === 'book' ? 'to_read' : 'to_watch'
-
-      await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: media.id, status }),
-      })
-
+      await addToLibrary(reco)
       // Mark as added
       setMessages(prev => prev.map(msg => {
         if (msg.id === messageId && msg.recommendations) {
           return {
             ...msg,
             recommendations: msg.recommendations.map(r =>
-              r.id === recoId ? { ...r, loading: false, added: true } : r
+              r.id === recoId ? { ...r, added: true } : r
             )
           }
         }
@@ -115,18 +103,6 @@ export default function AskPage() {
       }))
     } catch (error) {
       console.error('Error adding to library:', error)
-      // Reset loading state on error
-      setMessages(prev => prev.map(msg => {
-        if (msg.id === messageId && msg.recommendations) {
-          return {
-            ...msg,
-            recommendations: msg.recommendations.map(r =>
-              r.id === recoId ? { ...r, loading: false } : r
-            )
-          }
-        }
-        return msg
-      }))
       alert('Impossible de trouver ce média. Essaie de le chercher manuellement.')
     }
   }
@@ -247,28 +223,8 @@ export default function AskPage() {
     setIsAddingFromDismiss(true)
 
     try {
-      // Search for the media first
-      const searchResponse = await fetch(
-        `/api/search?q=${encodeURIComponent(reco.title)}&type=${reco.type}`
-      )
-      const searchData = await searchResponse.json() as { results?: Array<{ id: string; title: string }> }
-
-      if (!searchData.results || searchData.results.length === 0) {
-        throw new Error('Media not found')
-      }
-
-      // Get the first match
-      const media = searchData.results[0]
-
-      // Add to library with "completed" status (read/watched)
-      const endpoint = reco.type === 'book' ? '/api/books' : reco.type === 'movie' ? '/api/movies' : '/api/shows'
       const status = reco.type === 'book' ? 'read' : 'watched'
-
-      await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: media.id, status }),
-      })
+      await addToLibrary(reco, status)
 
       // Mark as added in UI (instead of removing)
       setMessages(prev => prev.map(msg => {
@@ -360,63 +316,16 @@ export default function AskPage() {
                   {message.recommendations && message.recommendations.length > 0 && (
                     <div className="mt-4 space-y-3">
                       {message.recommendations.map((reco) => (
-                        <Card key={reco.id} className="bg-background">
-                          <CardContent className="p-3">
-                            <div className="flex items-start gap-3">
-                              {reco.type === "book" && (
-                                <Book className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                              )}
-                              {reco.type === "movie" && (
-                                <Film className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                              )}
-                              {reco.type === "show" && (
-                                <Tv className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-medium text-sm">
-                                  {reco.title}
-                                </h4>
-                                {reco.subtitle && (
-                                  <p className="text-xs text-muted-foreground">
-                                    {reco.subtitle}
-                                  </p>
-                                )}
-                                <p className="text-xs text-muted-foreground mt-1 italic">
-                                  "{reco.reason}"
-                                </p>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Button
-                                  size="sm"
-                                  variant={reco.added ? "default" : "secondary"}
-                                  disabled={reco.loading || reco.added}
-                                  onClick={() => handleAddToLibrary(message.id, reco.id, reco)}
-                                >
-                                  {reco.loading ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : reco.added ? (
-                                    <>
-                                      <Check className="h-4 w-4 mr-1" />
-                                      Ajouté
-                                    </>
-                                  ) : (
-                                    "Ajouter"
-                                  )}
-                                </Button>
-                                {!reco.added && (
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="text-muted-foreground hover:text-destructive"
-                                    onClick={() => openDismissDialog(message.id, reco)}
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
+                        <RecommendationCard
+                          key={reco.id}
+                          type={reco.type}
+                          title={reco.title}
+                          subtitle={reco.subtitle}
+                          reason={reco.reason}
+                          added={reco.added}
+                          onAdd={() => handleAddFromCard(message.id, reco.id, reco)}
+                          onDismiss={() => openDismissDialog(message.id, reco)}
+                        />
                       ))}
                     </div>
                   )}

@@ -4,8 +4,8 @@
 
 ## Statut actuel
 
-**Phase :** Phase 14 - Amélioration précision recherche (TERMINÉE)
-**Dernière mise à jour :** 2025-12-16 (session 9 - fix fuzzy match + debounce)
+**Phase :** Phase 15 - Amélioration recommandations IA (TERMINÉE)
+**Dernière mise à jour :** 2025-12-16 (session 10 - images recos + modal détail + synopsis)
 **Build :** OK
 **Déployé :** https://myshelf-d69.pages.dev
 **État DB prod :** Vraies données avec descriptions en français (10 livres, 10 films, 10 séries)
@@ -171,6 +171,13 @@
 - [x] **Bonus auteur** : +15% si l'auteur correspond aussi (>70% similaire)
 - [x] **Élimination faux positifs** : Plus de pollution par des livres non pertinents ("The Marine Corps Gazette" pour "Fourth Wing")
 
+### Phase 15 : Amélioration recommandations IA - TERMINÉE
+- [x] **Images dans les recos IA** : Enrichissement automatique via recherche API
+- [x] **Modal détail cliquable** : Clic sur une reco ouvre un modal avec synopsis, genres, tropes, etc.
+- [x] **Boutons d'action** : "Ajouter" et "Ne plus suggérer" dans le modal
+- [x] **Nouveau composant** : `RecommendationCard` dans `src/components/media/`
+- [x] **Synopsis en haut** : Déplacé avant les genres/statut/note sur les 3 pages de détail
+
 ---
 
 ## Migrations D1
@@ -283,9 +290,9 @@ src/
 > Voir **NEXT_SESSION.md** pour les idées détaillées de la prochaine session.
 
 **Prioritaires :**
-- Images livres dans les recos IA + clic pour voir la fiche
-- Corriger l'affichage du synopsis (avant la note)
-- Filtres avancés (genre, note minimum, tropes)
+- Liste "Mes envies" (wishlist sans ajout à la biblio)
+- Filtre par genre (recherche et recos IA)
+- Export bibliothèque (CSV/JSON)
 
 **Optionnelles :**
 - Service worker avancé pour mode offline complet

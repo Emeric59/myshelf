@@ -311,6 +311,18 @@ export default function MovieDetailPage({ params }: { params: Promise<{ id: stri
           </CardContent>
         </Card>
 
+        {/* Synopsis */}
+        {movie.description && (
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="text-lg">Synopsis</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <p className="text-sm text-muted-foreground">{movie.description}</p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Rating */}
         <Card className="mt-4">
           <CardContent className="p-4">
@@ -388,17 +400,6 @@ export default function MovieDetailPage({ params }: { params: Promise<{ id: stri
           </CardContent>
         </Card>
 
-        {/* Description */}
-        {movie.description && (
-          <Card className="mt-4">
-            <CardHeader>
-              <CardTitle className="text-lg">Synopsis</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">{movie.description}</p>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   )
