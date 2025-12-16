@@ -5,16 +5,20 @@
 **Fait :**
 - Images dans les recommandations IA (enrichissement automatique via API)
 - Modal de détail cliquable sur les recos IA (avec boutons Ajouter / Ne plus suggérer)
-- Synopsis déplacé en haut des fiches détail (avant genres/statut/note)
+- Fermeture automatique du modal après ajout à la bibliothèque
+- Synopsis déplacé après progression, avant note/avis sur les fiches détail
+- Nettoyage HTML dans les synopsis (balises `<br>`, `<i>`, `<b>`, entités HTML)
+- Auto-mark tous les épisodes vus quand série = "Terminée"
 - Nouveau composant `RecommendationCard` pour les recos IA
+- Fonction utilitaire `stripHtml()` dans `lib/utils.ts`
 
 ---
 
-## Priorité 1 - Quick wins (implémentation rapide, UX immédiate)
+## Priorité 1 - Quick wins (TERMINÉ)
 
 - [x] **Images dans les recos IA** - Ajouter image livre/film/série comme dans la recherche
 - [x] **Clic sur reco → fiche détail** - Modal de détail avec synopsis, genres, tropes, etc.
-- [x] **Synopsis avant la note** - Corrigé sur les 3 pages de détail
+- [x] **Synopsis avant la note** - Après progression, avant note/avis
 
 ---
 

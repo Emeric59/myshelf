@@ -5,7 +5,7 @@
 ## Statut actuel
 
 **Phase :** Phase 15 - Amélioration recommandations IA (TERMINÉE)
-**Dernière mise à jour :** 2025-12-16 (session 10 - images recos + modal détail + synopsis)
+**Dernière mise à jour :** 2025-12-16 (session 10 - recos IA + UX fixes)
 **Build :** OK
 **Déployé :** https://myshelf-d69.pages.dev
 **État DB prod :** Vraies données avec descriptions en français (10 livres, 10 films, 10 séries)
@@ -176,7 +176,10 @@
 - [x] **Modal détail cliquable** : Clic sur une reco ouvre un modal avec synopsis, genres, tropes, etc.
 - [x] **Boutons d'action** : "Ajouter" et "Ne plus suggérer" dans le modal
 - [x] **Nouveau composant** : `RecommendationCard` dans `src/components/media/`
-- [x] **Synopsis en haut** : Déplacé avant les genres/statut/note sur les 3 pages de détail
+- [x] **Synopsis repositionné** : Après progression, avant note/avis sur les 3 pages de détail
+- [x] **Auto-close modal** : Fermeture automatique après ajout à la bibliothèque
+- [x] **Nettoyage HTML synopsis** : Fonction `stripHtml()` pour retirer balises et entités HTML
+- [x] **Auto-mark épisodes** : Tous les épisodes cochés "vus" quand série = "Terminée"
 
 ---
 
