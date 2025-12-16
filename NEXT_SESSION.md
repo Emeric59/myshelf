@@ -11,6 +11,7 @@
 - Auto-mark tous les épisodes vus quand série = "Terminée"
 - Nouveau composant `RecommendationCard` pour les recos IA
 - Fonction utilitaire `stripHtml()` dans `lib/utils.ts`
+- **Images dans suggestions par mood** : Refactorisé `/recommendations` pour utiliser `RecommendationCard` (images auto, modal détail, dismiss)
 
 ---
 
@@ -26,7 +27,6 @@
 
 - [ ] **Liste "Mes envies"** - Sauvegarder une reco pour plus tard (sans l'ajouter à la bibliothèque)
 - [ ] **Filtre par genre** - Sur recherche et recommandations IA
-- [ ] **Export bibliothèque** - CSV et/ou JSON
 
 ---
 

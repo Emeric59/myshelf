@@ -2,12 +2,12 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import Image from "next/image"
-import { Sparkles, MessageCircle, RefreshCw, Check, Loader2, Book, Film, Tv } from "lucide-react"
+import { Sparkles, MessageCircle, RefreshCw, Loader2, Book, Film, Tv } from "lucide-react"
 import { Header, PageHeader } from "@/components/layout"
 import { BottomNav } from "@/components/layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { DismissDialog, RecommendationCard } from "@/components/media"
 import { cn } from "@/lib/utils"
 
 type MediaTypeFilter = "all" | "book" | "movie" | "show"
@@ -17,10 +17,8 @@ interface RecommendationItem {
   type: "book" | "movie" | "show"
   title: string
   subtitle?: string
-  image_url?: string
   reason: string
   added?: boolean
-  loading?: boolean
 }
 
 const typeFilters: { value: MediaTypeFilter; label: string; icon: typeof Book }[] = [
@@ -45,6 +43,12 @@ export default function RecommendationsPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [selectedMood, setSelectedMood] = useState<string | null>(null)
   const [selectedType, setSelectedType] = useState<MediaTypeFilter>("all")
+
+  // Dismiss dialog state
+  const [dismissDialogOpen, setDismissDialogOpen] = useState(false)
+  const [selectedForDismiss, setSelectedForDismiss] = useState<RecommendationItem | null>(null)
+  const [isDismissing, setIsDismissing] = useState(false)
+  const [isAddingFromDismiss, setIsAddingFromDismiss] = useState(false)
 
   const handleMoodSelect = async (moodId: string) => {
     const mood = moods.find(m => m.id === moodId)
@@ -108,51 +112,94 @@ export default function RecommendationsPage() {
     }
   }
 
-  const handleAddToLibrary = async (recoId: string, reco: RecommendationItem) => {
-    // Mark as loading
-    setRecommendations(prev => prev.map(r =>
-      r.id === recoId ? { ...r, loading: true } : r
-    ))
+  // Add to library helper
+  const addToLibrary = async (reco: RecommendationItem, status?: string) => {
+    const searchResponse = await fetch(
+      `/api/search?q=${encodeURIComponent(reco.title)}&type=${reco.type}`
+    )
+    const searchData = await searchResponse.json() as { results?: Array<{ id: string }> }
 
+    if (!searchData.results || searchData.results.length === 0) {
+      throw new Error("Media not found")
+    }
+
+    const media = searchData.results[0]
+    const endpoint = reco.type === "book" ? "/api/books" : reco.type === "movie" ? "/api/movies" : "/api/shows"
+    const defaultStatus = reco.type === "book" ? "to_read" : "to_watch"
+
+    await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: media.id, status: status || defaultStatus }),
+    })
+  }
+
+  // Handle add from RecommendationCard
+  const handleAddFromCard = async (recoId: string, reco: RecommendationItem) => {
     try {
-      // Search for the media first
-      const searchResponse = await fetch(
-        `/api/search?q=${encodeURIComponent(reco.title)}&type=${reco.type}`
-      )
-      const searchData = await searchResponse.json() as { results?: Array<{ id: string }> }
-
-      if (!searchData.results || searchData.results.length === 0) {
-        throw new Error("Media not found")
-      }
-
-      const media = searchData.results[0]
-      const endpoint = reco.type === "book" ? "/api/books" : reco.type === "movie" ? "/api/movies" : "/api/shows"
-      const status = reco.type === "book" ? "to_read" : "to_watch"
-
-      await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: media.id, status }),
-      })
-
-      // Mark as added
+      await addToLibrary(reco)
       setRecommendations(prev => prev.map(r =>
-        r.id === recoId ? { ...r, loading: false, added: true } : r
+        r.id === recoId ? { ...r, added: true } : r
       ))
     } catch (error) {
       console.error("Error adding to library:", error)
-      setRecommendations(prev => prev.map(r =>
-        r.id === recoId ? { ...r, loading: false } : r
-      ))
+      alert("Impossible de trouver ce média. Essaie de le chercher manuellement.")
     }
   }
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "book": return Book
-      case "movie": return Film
-      case "show": return Tv
-      default: return Book
+  // Handle dismiss
+  const openDismissDialog = (reco: RecommendationItem) => {
+    setSelectedForDismiss(reco)
+    setDismissDialogOpen(true)
+  }
+
+  const handleDismiss = async (reason: "already_consumed" | "not_interested" | "other", detail?: string) => {
+    if (!selectedForDismiss) return
+
+    setIsDismissing(true)
+    try {
+      await fetch("/api/dismissed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mediaType: selectedForDismiss.type,
+          title: selectedForDismiss.title,
+          reason,
+          reasonDetail: detail,
+        }),
+      })
+
+      // Remove from UI
+      setRecommendations(prev => prev.filter(r => r.id !== selectedForDismiss.id))
+      setDismissDialogOpen(false)
+      setSelectedForDismiss(null)
+    } catch (error) {
+      console.error("Error dismissing:", error)
+    } finally {
+      setIsDismissing(false)
+    }
+  }
+
+  // Handle "already consumed" -> add to library with completed status
+  const handleAddFromDismiss = async () => {
+    if (!selectedForDismiss) return
+
+    setIsAddingFromDismiss(true)
+    try {
+      const status = selectedForDismiss.type === "book" ? "read" : "watched"
+      await addToLibrary(selectedForDismiss, status)
+
+      // Mark as added in UI
+      setRecommendations(prev => prev.map(r =>
+        r.id === selectedForDismiss.id ? { ...r, added: true } : r
+      ))
+      setDismissDialogOpen(false)
+      setSelectedForDismiss(null)
+    } catch (error) {
+      console.error("Error adding to library:", error)
+      alert("Impossible de trouver ce média. Essaie de le chercher manuellement.")
+    } finally {
+      setIsAddingFromDismiss(false)
     }
   }
 
@@ -258,72 +305,19 @@ export default function RecommendationsPage() {
               <p className="text-muted-foreground">L'IA cherche des recommandations...</p>
             </div>
           ) : recommendations.length > 0 ? (
-            <div className="space-y-4">
-              {recommendations.map((reco) => {
-                const TypeIcon = getTypeIcon(reco.type)
-                return (
-                  <Card key={reco.id} className="overflow-hidden">
-                    <CardContent className="p-4">
-                      <div className="flex gap-3">
-                        {/* Poster placeholder */}
-                        <div className="w-16 h-24 rounded bg-muted flex items-center justify-center flex-shrink-0">
-                          {reco.image_url ? (
-                            <Image
-                              src={reco.image_url}
-                              alt={reco.title}
-                              width={64}
-                              height={96}
-                              className="w-full h-full object-cover rounded"
-                            />
-                          ) : (
-                            <TypeIcon className="h-6 w-6 text-muted-foreground" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <h4 className="font-medium line-clamp-1">{reco.title}</h4>
-                              {reco.subtitle && (
-                                <p className="text-sm text-muted-foreground line-clamp-1">
-                                  {reco.subtitle}
-                                </p>
-                              )}
-                            </div>
-                            <span className="text-xs text-muted-foreground capitalize flex-shrink-0">
-                              {reco.type === "book" ? "Livre" : reco.type === "movie" ? "Film" : "Série"}
-                            </span>
-                          </div>
-                          <p className="text-sm text-muted-foreground mt-2 line-clamp-2 italic">
-                            "{reco.reason}"
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 mt-3 pt-3 border-t">
-                        <Button
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => handleAddToLibrary(reco.id, reco)}
-                          disabled={reco.added || reco.loading}
-                        >
-                          {reco.loading ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : reco.added ? (
-                            <>
-                              <Check className="h-4 w-4 mr-1" />
-                              Ajouté
-                            </>
-                          ) : (
-                            <>
-                              <Check className="h-4 w-4 mr-1" />
-                              {reco.type === "book" ? "À lire" : "À voir"}
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
+            <div className="space-y-3">
+              {recommendations.map((reco) => (
+                <RecommendationCard
+                  key={reco.id}
+                  type={reco.type}
+                  title={reco.title}
+                  subtitle={reco.subtitle}
+                  reason={reco.reason}
+                  added={reco.added}
+                  onAdd={() => handleAddFromCard(reco.id, reco)}
+                  onDismiss={() => openDismissDialog(reco)}
+                />
+              ))}
             </div>
           ) : (
             <div className="text-center py-12">
@@ -346,6 +340,18 @@ export default function RecommendationsPage() {
       </main>
 
       <BottomNav />
+
+      {/* Dismiss Dialog */}
+      <DismissDialog
+        open={dismissDialogOpen}
+        onOpenChange={setDismissDialogOpen}
+        title={selectedForDismiss?.title || ""}
+        mediaType={selectedForDismiss?.type || "book"}
+        onDismiss={handleDismiss}
+        onAddToLibrary={handleAddFromDismiss}
+        isLoading={isDismissing}
+        isAddingToLibrary={isAddingFromDismiss}
+      />
     </div>
   )
 }

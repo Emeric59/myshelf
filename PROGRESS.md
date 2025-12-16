@@ -180,6 +180,7 @@
 - [x] **Auto-close modal** : Fermeture automatique après ajout à la bibliothèque
 - [x] **Nettoyage HTML synopsis** : Fonction `stripHtml()` pour retirer balises et entités HTML
 - [x] **Auto-mark épisodes** : Tous les épisodes cochés "vus" quand série = "Terminée"
+- [x] **Images suggestions mood** : `/recommendations` refactorisé pour utiliser `RecommendationCard`
 
 ---
 
