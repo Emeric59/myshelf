@@ -12,7 +12,7 @@
 - **Plateforme** : PWA (web + mobile installable)
 - **Style** : Whimsical, violet/vert, ambiance nature/cosy
 - **Objectif** : Tracker ses lectures/visionnages + obtenir des recommandations IA personnalisées
-- **URL Production** : https://myshelf-d69.pages.dev
+- **URL Production** : https://myshelf.emericb59.workers.dev
 
 ## Stack technique
 
@@ -208,5 +208,5 @@ src/
 ## Informations Cloudflare
 
 - **D1 Database ID** : `2bf81530-3003-4748-958a-111383c35183`
-- **Pages URL** : https://myshelf-d69.pages.dev
+- **Workers URL** : https://myshelf.emericb59.workers.dev
 - **GitHub Repo** : https://github.com/Emeric59/myshelf
