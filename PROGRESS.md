@@ -4,8 +4,8 @@
 
 ## Statut actuel
 
-**Phase :** Phase 15 - Amélioration recommandations IA (TERMINÉE)
-**Dernière mise à jour :** 2025-12-16 (session 10 - recos IA + UX fixes)
+**Phase :** Phase 16 - Wishlist et filtres par genre (TERMINÉE)
+**Dernière mise à jour :** 2025-12-16 (session 11 - wishlist + filtres genre)
 **Build :** OK
 **Déployé :** https://myshelf-d69.pages.dev
 **État DB prod :** Vraies données avec descriptions en français (10 livres, 10 films, 10 séries)
@@ -182,6 +182,16 @@
 - [x] **Auto-mark épisodes** : Tous les épisodes cochés "vus" quand série = "Terminée"
 - [x] **Images suggestions mood** : `/recommendations` refactorisé pour utiliser `RecommendationCard`
 
+### Phase 16 : Wishlist et filtres par genre - TERMINÉE
+- [x] **Liste "Mes envies"** : Table DB `wishlist`, API `/api/wishlist`, page `/wishlist`
+- [x] **Bouton cœur sur RecommendationCard** : Sauvegarder une reco pour plus tard
+- [x] **Modal avec "Plus tard"** : 3 options (Ne plus suggérer, Plus tard, Ajouter)
+- [x] **Page wishlist complète** : Filtres par type, ajout à la biblio, suppression
+- [x] **Lien wishlist** : Card sur la page `/recommendations`
+- [x] **Filtre par genre - Recherche** : Select avec 12 genres, filtrage côté client
+- [x] **Filtre par genre - Recos mood** : Inclus dans le prompt IA
+- [x] **Filtre par genre - Chat IA** : Inclus dans le prompt IA
+
 ---
 
 ## Migrations D1
@@ -197,6 +207,7 @@
 | `007_add_book_enrichment.sql` | Colonnes enrichissement livres (tropes, moods, hardcover_slug, etc.) | ✅ |
 | `008_episode_tracking.sql` | Tables `show_seasons` et `watched_episodes` pour tracking épisodes | ✅ |
 | `009_dismissed_media.sql` | Table `dismissed_media` pour refus de suggestions IA | ✅ |
+| `010_wishlist.sql` | Table `wishlist` pour liste d'envies | À appliquer |
 
 > **Note :** La DB contient des données réelles avec descriptions en français, IDs vérifiés via APIs officielles (Open Library + TMDB).
 
@@ -219,6 +230,7 @@
 | `/api/subscriptions` | GET, POST | Abonnements streaming |
 | `/api/episodes` | GET, POST, DELETE | Tracking épisodes séries (style TV Time) |
 | `/api/dismissed` | GET, POST, DELETE | Médias refusés dans recommandations IA |
+| `/api/wishlist` | GET, POST, DELETE | Liste d'envies (médias à découvrir plus tard) |
 
 ---
 

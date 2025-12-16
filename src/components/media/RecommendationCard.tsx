@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Book, Film, Tv, Check, X, Loader2 } from "lucide-react"
+import { Book, Film, Tv, Check, X, Loader2, Heart } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -69,6 +69,8 @@ export function RecommendationCard({
   const [enrichedData, setEnrichedData] = useState<SearchResult | null>(null)
   const [loading, setLoading] = useState(true)
   const [isAdding, setIsAdding] = useState(false)
+  const [isSavingWishlist, setIsSavingWishlist] = useState(false)
+  const [savedToWishlist, setSavedToWishlist] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
 
   const Icon = typeIcons[type]
@@ -105,7 +107,7 @@ export function RecommendationCard({
   }
 
   const handleCardClick = () => {
-    if (!added) {
+    if (!added && !savedToWishlist) {
       setModalOpen(true)
     }
   }
@@ -113,6 +115,38 @@ export function RecommendationCard({
   const imageUrl = enrichedData?.image_url
   const displayTitle = enrichedData?.title || title
   const displaySubtitle = enrichedData?.subtitle || subtitle
+
+  const handleSaveToWishlist = async () => {
+    setIsSavingWishlist(true)
+    try {
+      const res = await fetch("/api/wishlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mediaType: type,
+          externalId: enrichedData?.id,
+          title: displayTitle,
+          subtitle: displaySubtitle,
+          imageUrl: enrichedData?.image_url,
+          description: enrichedData?.description,
+          genres: enrichedData?.genres,
+          reason,
+        }),
+      })
+      if (res.ok) {
+        setSavedToWishlist(true)
+        setModalOpen(false)
+      } else if (res.status === 409) {
+        // Already in wishlist
+        setSavedToWishlist(true)
+        setModalOpen(false)
+      }
+    } catch (error) {
+      console.error("Error saving to wishlist:", error)
+    } finally {
+      setIsSavingWishlist(false)
+    }
+  }
   const description = enrichedData?.description ? stripHtml(enrichedData.description) : undefined
   const genres = enrichedData?.genres
   const tropes = enrichedData?.tropes
@@ -170,38 +204,65 @@ export function RecommendationCard({
 
             {/* Actions */}
             <div className="flex items-center gap-1 flex-shrink-0">
-              <Button
-                size="sm"
-                variant={added ? "default" : "secondary"}
-                disabled={isAdding || added}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleAdd()
-                }}
-              >
-                {isAdding ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : added ? (
-                  <>
-                    <Check className="h-4 w-4 mr-1" />
-                    Ajouté
-                  </>
-                ) : (
-                  "Ajouter"
-                )}
-              </Button>
-              {!added && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-muted-foreground hover:text-destructive"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onDismiss()
-                  }}
-                >
-                  <X className="h-4 w-4" />
+              {savedToWishlist ? (
+                <Button size="sm" variant="default" disabled>
+                  <Heart className="h-4 w-4 mr-1 fill-current" />
+                  Sauvé
                 </Button>
+              ) : (
+                <>
+                  <Button
+                    size="sm"
+                    variant={added ? "default" : "secondary"}
+                    disabled={isAdding || added}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleAdd()
+                    }}
+                  >
+                    {isAdding ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : added ? (
+                      <>
+                        <Check className="h-4 w-4 mr-1" />
+                        Ajouté
+                      </>
+                    ) : (
+                      "Ajouter"
+                    )}
+                  </Button>
+                  {!added && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-muted-foreground hover:text-pink-500"
+                        disabled={isSavingWishlist}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleSaveToWishlist()
+                        }}
+                      >
+                        {isSavingWishlist ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Heart className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onDismiss()
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -357,7 +418,7 @@ export function RecommendationCard({
             </div>
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
             <Button
               variant="outline"
               className="text-destructive hover:text-destructive"
@@ -368,6 +429,19 @@ export function RecommendationCard({
             >
               <X className="w-4 h-4 mr-2" />
               Ne plus suggérer
+            </Button>
+            <Button
+              variant="outline"
+              className="text-pink-500 hover:text-pink-600 hover:bg-pink-50"
+              onClick={handleSaveToWishlist}
+              disabled={isSavingWishlist}
+            >
+              {isSavingWishlist ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Heart className="w-4 h-4 mr-2" />
+              )}
+              Plus tard
             </Button>
             <Button onClick={handleAdd} disabled={isAdding}>
               {isAdding ? (

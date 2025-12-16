@@ -23,6 +23,23 @@ const typeFilters: { value: FilterType; label: string; icon: typeof Book }[] = [
   { value: "show", label: "Séries", icon: Tv },
 ]
 
+// Common genres across media types
+const genreOptions = [
+  { value: "", label: "Tous les genres" },
+  { value: "romance", label: "Romance" },
+  { value: "fantasy", label: "Fantasy" },
+  { value: "science-fiction", label: "Science-Fiction" },
+  { value: "thriller", label: "Thriller" },
+  { value: "horror", label: "Horreur" },
+  { value: "comedy", label: "Comédie" },
+  { value: "drama", label: "Drame" },
+  { value: "action", label: "Action" },
+  { value: "adventure", label: "Aventure" },
+  { value: "mystery", label: "Mystère" },
+  { value: "crime", label: "Policier" },
+  { value: "historical", label: "Historique" },
+]
+
 function SearchContent() {
   const searchParams = useSearchParams()
   const initialType = (searchParams.get("type") as FilterType) || "all"
@@ -30,6 +47,7 @@ function SearchContent() {
   const [query, setQuery] = useState("")
   const [typeFilter, setTypeFilter] = useState<FilterType>(initialType)
   const [yearFilter, setYearFilter] = useState<number | null>(null)
+  const [genreFilter, setGenreFilter] = useState<string>("")
   const [results, setResults] = useState<SearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
@@ -142,15 +160,28 @@ function SearchContent() {
     }
   }
 
-  const filteredResults =
+  // Filter by genre (case-insensitive partial match)
+  const filterByGenre = (items: SearchResult[]) => {
+    if (!genreFilter) return items
+    return items.filter((r) => {
+      const genres = r.genres || []
+      return genres.some((g) => {
+        const genreStr = typeof g === "string" ? g : (g as { tag?: string }).tag || ""
+        return genreStr.toLowerCase().includes(genreFilter.toLowerCase())
+      })
+    })
+  }
+
+  const filteredResults = filterByGenre(
     typeFilter === "all"
       ? results
       : results.filter((r) => r.type === typeFilter)
+  )
 
   const groupedResults = {
-    book: results.filter((r) => r.type === "book"),
-    movie: results.filter((r) => r.type === "movie"),
-    show: results.filter((r) => r.type === "show"),
+    book: filterByGenre(results.filter((r) => r.type === "book")),
+    movie: filterByGenre(results.filter((r) => r.type === "movie")),
+    show: filterByGenre(results.filter((r) => r.type === "show")),
   }
 
   return (
@@ -201,15 +232,28 @@ function SearchContent() {
           ))}
         </div>
 
-        {/* Year filter */}
-        <div className="mb-6">
-          <Slider
-            value={yearFilter}
-            onChange={setYearFilter}
-            min={1985}
-            max={CURRENT_YEAR}
-            nullLabel="Toutes les années"
-          />
+        {/* Year and Genre filters */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <div className="flex-1">
+            <Slider
+              value={yearFilter}
+              onChange={setYearFilter}
+              min={1985}
+              max={CURRENT_YEAR}
+              nullLabel="Toutes les années"
+            />
+          </div>
+          <select
+            value={genreFilter}
+            onChange={(e) => setGenreFilter(e.target.value)}
+            className="h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          >
+            {genreOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Loading state */}

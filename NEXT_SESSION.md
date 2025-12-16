@@ -23,10 +23,10 @@
 
 ---
 
-## Priorité 2 - Fonctionnalités à valeur ajoutée
+## Priorité 2 - Fonctionnalités à valeur ajoutée (TERMINÉ)
 
-- [ ] **Liste "Mes envies"** - Sauvegarder une reco pour plus tard (sans l'ajouter à la bibliothèque)
-- [ ] **Filtre par genre** - Sur recherche et recommandations IA
+- [x] **Liste "Mes envies"** - Sauvegarder une reco pour plus tard (sans l'ajouter à la bibliothèque)
+- [x] **Filtre par genre** - Sur recherche et recommandations IA
 
 ---
 

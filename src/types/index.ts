@@ -275,3 +275,17 @@ export interface Stats {
   favorite_genres: { genre: string; count: number }[]
   favorite_authors: { author: string; count: number }[]
 }
+
+// Wishlist
+export interface WishlistItem {
+  id: number
+  media_type: MediaType
+  external_id?: string
+  title: string
+  subtitle?: string
+  image_url?: string
+  description?: string
+  genres?: string[]
+  reason?: string
+  added_at?: string
+}

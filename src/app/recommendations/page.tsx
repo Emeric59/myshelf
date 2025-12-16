@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Sparkles, MessageCircle, RefreshCw, Loader2, Book, Film, Tv } from "lucide-react"
+import { Sparkles, MessageCircle, RefreshCw, Loader2, Book, Film, Tv, Heart } from "lucide-react"
 import { Header, PageHeader } from "@/components/layout"
 import { BottomNav } from "@/components/layout"
 import { Button } from "@/components/ui/button"
@@ -38,11 +38,27 @@ const moods = [
   { id: "cosy", emoji: "🌙", label: "Cosy", prompt: "Je cherche quelque chose de cosy et réconfortant, parfait pour une soirée au calme" },
 ]
 
+// Genre options for filtering recommendations
+const genreOptions = [
+  { value: "", label: "Tous les genres" },
+  { value: "romance", label: "Romance" },
+  { value: "fantasy", label: "Fantasy" },
+  { value: "science-fiction", label: "Science-Fiction" },
+  { value: "thriller", label: "Thriller" },
+  { value: "horror", label: "Horreur" },
+  { value: "comedy", label: "Comédie" },
+  { value: "drama", label: "Drame" },
+  { value: "action", label: "Action" },
+  { value: "mystery", label: "Mystère" },
+  { value: "historical", label: "Historique" },
+]
+
 export default function RecommendationsPage() {
   const [recommendations, setRecommendations] = useState<RecommendationItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [selectedMood, setSelectedMood] = useState<string | null>(null)
   const [selectedType, setSelectedType] = useState<MediaTypeFilter>("all")
+  const [selectedGenre, setSelectedGenre] = useState<string>("")
 
   // Dismiss dialog state
   const [dismissDialogOpen, setDismissDialogOpen] = useState(false)
@@ -58,7 +74,7 @@ export default function RecommendationsPage() {
     setIsLoading(true)
     setRecommendations([])
 
-    // Construire le prompt avec le type si sélectionné
+    // Construire le prompt avec le type et genre si sélectionnés
     let prompt = mood.prompt
     const mediaTypes = selectedType !== "all" ? [selectedType] : undefined
 
@@ -68,6 +84,11 @@ export default function RecommendationsPage() {
       prompt += " (uniquement des films)"
     } else if (selectedType === "show") {
       prompt += " (uniquement des séries)"
+    }
+
+    if (selectedGenre) {
+      const genreLabel = genreOptions.find(g => g.value === selectedGenre)?.label || selectedGenre
+      prompt += ` dans le genre ${genreLabel}`
     }
 
     try {
@@ -219,30 +240,46 @@ export default function RecommendationsPage() {
           }
         />
 
-        {/* Ask AI Card */}
-        <Card className="mb-6 border-primary/20 bg-primary/5">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-4">
-              <div className="p-2 rounded-full bg-primary/10">
-                <MessageCircle className="h-6 w-6 text-primary" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-medium mb-1">Demande personnalisée</h3>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Décris ce que tu cherches et l'IA te trouvera des suggestions parfaites
-                </p>
-                <Button asChild>
+        {/* Quick Actions */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          {/* Ask AI Card */}
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="p-4">
+              <div className="flex flex-col items-center text-center gap-2">
+                <div className="p-2 rounded-full bg-primary/10">
+                  <MessageCircle className="h-5 w-5 text-primary" />
+                </div>
+                <h3 className="font-medium text-sm">Demander à l'IA</h3>
+                <Button asChild size="sm" className="w-full">
                   <Link href="/recommendations/ask">
                     <Sparkles className="h-4 w-4 mr-2" />
-                    Demander à l'IA
+                    Discuter
                   </Link>
                 </Button>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Type Filter */}
+          {/* Wishlist Card */}
+          <Card className="border-pink-200 bg-pink-50/50 dark:border-pink-900 dark:bg-pink-950/20">
+            <CardContent className="p-4">
+              <div className="flex flex-col items-center text-center gap-2">
+                <div className="p-2 rounded-full bg-pink-100 dark:bg-pink-900/30">
+                  <Heart className="h-5 w-5 text-pink-500" />
+                </div>
+                <h3 className="font-medium text-sm">Mes envies</h3>
+                <Button asChild size="sm" variant="outline" className="w-full border-pink-200 hover:bg-pink-100 dark:border-pink-800 dark:hover:bg-pink-900/30">
+                  <Link href="/wishlist">
+                    <Heart className="h-4 w-4 mr-2 text-pink-500" />
+                    Voir
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filters */}
         <section className="mb-6">
           <h3 className="font-display text-lg font-medium mb-3">
             Quel type de média ?
@@ -266,6 +303,21 @@ export default function RecommendationsPage() {
                 </button>
               )
             })}
+          </div>
+
+          {/* Genre Filter */}
+          <div className="mt-4">
+            <select
+              value={selectedGenre}
+              onChange={(e) => setSelectedGenre(e.target.value)}
+              className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              {genreOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
         </section>
 

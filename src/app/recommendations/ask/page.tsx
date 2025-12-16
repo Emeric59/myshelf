@@ -35,11 +35,27 @@ const suggestions = [
   "Quelque chose qui va me faire pleurer",
 ]
 
+// Genre options for filtering recommendations
+const genreOptions = [
+  { value: "", label: "Tous les genres" },
+  { value: "romance", label: "Romance" },
+  { value: "fantasy", label: "Fantasy" },
+  { value: "science-fiction", label: "Science-Fiction" },
+  { value: "thriller", label: "Thriller" },
+  { value: "horror", label: "Horreur" },
+  { value: "comedy", label: "Comédie" },
+  { value: "drama", label: "Drame" },
+  { value: "action", label: "Action" },
+  { value: "mystery", label: "Mystère" },
+  { value: "historical", label: "Historique" },
+]
+
 export default function AskPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [yearFilter, setYearFilter] = useState<number | null>(null)
+  const [genreFilter, setGenreFilter] = useState<string>("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Dismiss dialog state
@@ -122,11 +138,18 @@ export default function AskPage() {
     setIsLoading(true)
 
     try {
+      // Build query with genre filter if selected
+      let query = input.trim()
+      if (genreFilter) {
+        const genreLabel = genreOptions.find(g => g.value === genreFilter)?.label || genreFilter
+        query += ` (dans le genre ${genreLabel})`
+      }
+
       const response = await fetch("/api/recommendations/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          query: input.trim(),
+          query,
           ...(yearFilter !== null && { minYear: yearFilter }),
         }),
       })
@@ -349,14 +372,29 @@ export default function AskPage() {
       {/* Input */}
       <div className="sticky bottom-0 border-t bg-background p-4">
         <div className="container space-y-3">
-          {/* Year filter */}
-          <Slider
-            value={yearFilter}
-            onChange={setYearFilter}
-            min={1985}
-            max={CURRENT_YEAR}
-            nullLabel="Toutes les années"
-          />
+          {/* Filters */}
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <Slider
+                value={yearFilter}
+                onChange={setYearFilter}
+                min={1985}
+                max={CURRENT_YEAR}
+                nullLabel="Toutes les années"
+              />
+            </div>
+            <select
+              value={genreFilter}
+              onChange={(e) => setGenreFilter(e.target.value)}
+              className="h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              {genreOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
           <form onSubmit={handleSubmit} className="flex gap-2">
             <Input
               value={input}
