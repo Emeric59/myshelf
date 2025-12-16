@@ -63,6 +63,7 @@ export default function WishlistPage() {
   const [adding, setAdding] = useState<number | null>(null)
   const [confirmRemove, setConfirmRemove] = useState<WishlistItem | null>(null)
   const [confirmAdd, setConfirmAdd] = useState<WishlistItem | null>(null)
+  const [selectedItem, setSelectedItem] = useState<WishlistItem | null>(null)
 
   useEffect(() => {
     fetchWishlist()
@@ -234,8 +235,11 @@ export default function WishlistPage() {
               <Card key={item.id} className="overflow-hidden">
                 <CardContent className="p-4">
                   <div className="flex gap-3">
-                    {/* Image */}
-                    <div className="relative w-16 h-24 rounded overflow-hidden bg-muted flex-shrink-0">
+                    {/* Image - Clickable */}
+                    <button
+                      onClick={() => setSelectedItem(item)}
+                      className="relative w-16 h-24 rounded overflow-hidden bg-muted flex-shrink-0 hover:opacity-80 transition-opacity"
+                    >
                       {item.image_url ? (
                         <Image
                           src={item.image_url}
@@ -249,10 +253,13 @@ export default function WishlistPage() {
                           <MediaIcon type={item.media_type} />
                         </div>
                       )}
-                    </div>
+                    </button>
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
+                    {/* Content - Clickable */}
+                    <button
+                      onClick={() => setSelectedItem(item)}
+                      className="flex-1 min-w-0 text-left hover:opacity-80 transition-opacity"
+                    >
                       <p className="font-medium line-clamp-2">{item.title}</p>
                       {item.subtitle && (
                         <p className="text-sm text-muted-foreground">
@@ -279,7 +286,7 @@ export default function WishlistPage() {
                           Ajouté le {formatDate(item.added_at)}
                         </p>
                       )}
-                    </div>
+                    </button>
 
                     {/* Actions */}
                     <div className="flex flex-col gap-1 shrink-0">
@@ -374,6 +381,129 @@ export default function WishlistPage() {
             <Button onClick={() => confirmAdd && handleAddToLibrary(confirmAdd)}>
               <Plus className="h-4 w-4 mr-2" />
               Ajouter
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Detail Modal */}
+      <Dialog
+        open={!!selectedItem}
+        onOpenChange={(open) => !open && setSelectedItem(null)}
+      >
+        <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {selectedItem && <MediaIcon type={selectedItem.media_type} />}
+              {selectedItem && MEDIA_TYPE_LABELS[selectedItem.media_type]}
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedItem && (
+            <div className="flex-1 overflow-y-auto -mx-6 px-6 max-h-[60vh]">
+              <div className="space-y-4 pb-4">
+                {/* Cover + Basic info */}
+                <div className="flex gap-4">
+                  {/* Cover */}
+                  <div className="relative w-24 h-36 flex-shrink-0 rounded-lg overflow-hidden bg-muted">
+                    {selectedItem.image_url ? (
+                      <Image
+                        src={selectedItem.image_url}
+                        alt={selectedItem.title}
+                        fill
+                        className="object-cover"
+                        sizes="96px"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <MediaIcon type={selectedItem.media_type} />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-lg leading-tight">
+                      {selectedItem.title}
+                    </h3>
+                    {selectedItem.subtitle && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {selectedItem.subtitle}
+                      </p>
+                    )}
+                    {selectedItem.added_at && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Sauvegardé le {formatDate(selectedItem.added_at)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* AI Reason */}
+                {selectedItem.reason && (
+                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
+                    <p className="text-sm italic text-primary">
+                      &quot;{selectedItem.reason}&quot;
+                    </p>
+                  </div>
+                )}
+
+                {/* Description */}
+                {selectedItem.description && (
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Synopsis</h4>
+                    <p className="text-sm text-muted-foreground line-clamp-6">
+                      {selectedItem.description}
+                    </p>
+                  </div>
+                )}
+
+                {/* Genres */}
+                {selectedItem.genres && selectedItem.genres.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Genres</h4>
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedItem.genres.map((genre, i) => (
+                        <Badge key={i} variant="secondary">
+                          {genre}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
+            <Button
+              variant="outline"
+              className="text-destructive hover:text-destructive"
+              onClick={() => {
+                if (selectedItem) {
+                  setConfirmRemove(selectedItem)
+                  setSelectedItem(null)
+                }
+              }}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Retirer
+            </Button>
+            <Button
+              onClick={() => {
+                if (selectedItem) {
+                  handleAddToLibrary(selectedItem)
+                  setSelectedItem(null)
+                }
+              }}
+              disabled={adding === selectedItem?.id}
+            >
+              {adding === selectedItem?.id ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Plus className="w-4 h-4 mr-2" />
+              )}
+              Ajouter à la bibliothèque
             </Button>
           </DialogFooter>
         </DialogContent>
