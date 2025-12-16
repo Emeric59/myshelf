@@ -66,6 +66,7 @@ export default function ChartsPage() {
   const [data, setData] = useState<ChartApiResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isMounted, setIsMounted] = useState(false)
 
   // Filtres
   const [period, setPeriod] = useState<PeriodType>("current_year")
@@ -77,6 +78,11 @@ export default function ChartsPage() {
   const currentYear = new Date().getFullYear()
   const [customStart, setCustomStart] = useState(`${currentYear}-01-01`)
   const [customEnd, setCustomEnd] = useState(`${currentYear}-12-31`)
+
+  // Attendre le montage côté client pour éviter le warning recharts
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   // Fetch data
   useEffect(() => {
@@ -167,36 +173,42 @@ export default function ChartsPage() {
         </CardHeader>
         <CardContent>
           <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <ChartComponent data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                <XAxis
-                  dataKey="name"
-                  tick={{ fontSize: 10 }}
-                  interval="preserveStartEnd"
-                />
-                <YAxis tick={{ fontSize: 10 }} width={30} />
-                <Tooltip
-                  formatter={(value) => [formatValue(value as number), dataKey]}
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--background))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
-                  }}
-                />
-                {chartType === "bar" ? (
-                  <Bar dataKey={dataKey} fill={color} radius={[4, 4, 0, 0]} />
-                ) : (
-                  <Line
-                    type="monotone"
-                    dataKey={dataKey}
-                    stroke={color}
-                    strokeWidth={2}
-                    dot={{ fill: color, r: 3 }}
+            {!isMounted ? (
+              <div className="h-full flex items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <ChartComponent data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fontSize: 10 }}
+                    interval="preserveStartEnd"
                   />
-                )}
-              </ChartComponent>
-            </ResponsiveContainer>
+                  <YAxis tick={{ fontSize: 10 }} width={30} />
+                  <Tooltip
+                    formatter={(value) => [formatValue(value as number), dataKey]}
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--background))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                    }}
+                  />
+                  {chartType === "bar" ? (
+                    <Bar dataKey={dataKey} fill={color} radius={[4, 4, 0, 0]} />
+                  ) : (
+                    <Line
+                      type="monotone"
+                      dataKey={dataKey}
+                      stroke={color}
+                      strokeWidth={2}
+                      dot={{ fill: color, r: 3 }}
+                    />
+                  )}
+                </ChartComponent>
+              </ResponsiveContainer>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -222,57 +234,63 @@ export default function ChartsPage() {
         </CardHeader>
         <CardContent>
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <ChartComponent data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                <XAxis
-                  dataKey="name"
-                  tick={{ fontSize: 10 }}
-                  interval="preserveStartEnd"
-                />
-                <YAxis tick={{ fontSize: 10 }} width={30} />
-                <Tooltip
-                  formatter={(value, name) => [formatValue(value as number), name as string]}
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--background))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
-                  }}
-                />
-                <Legend />
-                {chartType === "bar" ? (
-                  <>
-                    <Bar dataKey="Livres" fill={COLORS.books} radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Films" fill={COLORS.movies} radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Séries" fill={COLORS.shows} radius={[4, 4, 0, 0]} />
-                  </>
-                ) : (
-                  <>
-                    <Line
-                      type="monotone"
-                      dataKey="Livres"
-                      stroke={COLORS.books}
-                      strokeWidth={2}
-                      dot={{ fill: COLORS.books, r: 3 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="Films"
-                      stroke={COLORS.movies}
-                      strokeWidth={2}
-                      dot={{ fill: COLORS.movies, r: 3 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="Séries"
-                      stroke={COLORS.shows}
-                      strokeWidth={2}
-                      dot={{ fill: COLORS.shows, r: 3 }}
-                    />
-                  </>
-                )}
-              </ChartComponent>
-            </ResponsiveContainer>
+            {!isMounted ? (
+              <div className="h-full flex items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <ChartComponent data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fontSize: 10 }}
+                    interval="preserveStartEnd"
+                  />
+                  <YAxis tick={{ fontSize: 10 }} width={30} />
+                  <Tooltip
+                    formatter={(value, name) => [formatValue(value as number), name as string]}
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--background))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                    }}
+                  />
+                  <Legend />
+                  {chartType === "bar" ? (
+                    <>
+                      <Bar dataKey="Livres" fill={COLORS.books} radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Films" fill={COLORS.movies} radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Séries" fill={COLORS.shows} radius={[4, 4, 0, 0]} />
+                    </>
+                  ) : (
+                    <>
+                      <Line
+                        type="monotone"
+                        dataKey="Livres"
+                        stroke={COLORS.books}
+                        strokeWidth={2}
+                        dot={{ fill: COLORS.books, r: 3 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="Films"
+                        stroke={COLORS.movies}
+                        strokeWidth={2}
+                        dot={{ fill: COLORS.movies, r: 3 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="Séries"
+                        stroke={COLORS.shows}
+                        strokeWidth={2}
+                        dot={{ fill: COLORS.shows, r: 3 }}
+                      />
+                    </>
+                  )}
+                </ChartComponent>
+              </ResponsiveContainer>
+            )}
           </div>
         </CardContent>
       </Card>
