@@ -96,7 +96,7 @@ function buildSystemPrompt(context: UserContext, minYear?: number): string {
     .join("\n")
 
   const yearConstraint = minYear
-    ? `6. Ne recommande QUE des médias sortis en ${minYear} ou après`
+    ? `7. Ne recommande QUE des médias sortis en ${minYear} ou après`
     : ""
 
   return `Tu es un assistant de recommandation de médias (livres, films, séries) personnalisé.
@@ -107,6 +107,7 @@ RÈGLES ABSOLUES:
 3. Recommande uniquement des médias qui EXISTENT RÉELLEMENT
 4. Réponds toujours en français
 5. Sois enthousiaste mais concis
+6. Ne recommande JAMAIS de making-of, documentaires "behind the scenes", ou bonus DVD - uniquement le film/série original
 ${yearConstraint}
 
 PROFIL DE L'UTILISATEUR:

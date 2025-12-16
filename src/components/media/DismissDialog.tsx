@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Dialog,
   DialogContent,
@@ -45,6 +45,15 @@ export function DismissDialog({
   const [selectedReason, setSelectedReason] = useState<DismissReason | null>(null)
   const [otherDetail, setOtherDetail] = useState("")
   const [showAddPrompt, setShowAddPrompt] = useState(false)
+
+  // Reset state quand le dialog s'ouvre
+  useEffect(() => {
+    if (open) {
+      setSelectedReason(null)
+      setOtherDetail("")
+      setShowAddPrompt(false)
+    }
+  }, [open])
 
   const handleReasonSelect = (reason: DismissReason) => {
     setSelectedReason(reason)
