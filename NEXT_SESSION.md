@@ -3,15 +3,17 @@
 ## Dernière session (2025-12-16)
 
 **Fait :**
-- **Graphiques d'évolution** : Nouvelle page `/stats/charts` avec recharts
-- **API charts** : `/api/stats/charts` avec paramètres période, granularité
-- **Sélecteurs multiples** : Période (année, 12 mois, custom), granularité (mois/semaine), métrique (count/time/pages)
-- **Toggle graphique** : Basculer entre barres et lignes
-- **Vue combinée** : Graphique avec livres/films/séries superposés
-- **Graphiques individuels** : Un graphique par type de média
-- **Lien depuis stats** : Card "Graphiques" ajoutée à `/stats`
+- **Prochaines sorties** : Nouvelle page `/upcoming` avec liste des prochains épisodes
+- **API upcoming** : `/api/upcoming` qui récupère les `next_episode_to_air` depuis TMDB
+- **Migration DB** : Nouvelles colonnes `next_episode_air_date`, `next_episode_season`, etc. dans `shows`
+- **Section dashboard** : Aperçu des 3 prochaines sorties sur la page d'accueil
+- **Rafraîchissement intelligent** : Les données sont mises à jour progressivement
+- **UI colorée** : Bordure verte pour "aujourd'hui", orange pour "dans 3 jours"
 
 **Session précédente :**
+- Graphiques d'évolution : Nouvelle page `/stats/charts` avec recharts
+- API charts : `/api/stats/charts` avec paramètres période, granularité
+- Toggle graphique : Basculer entre barres et lignes
 - Images dans les recommandations IA (enrichissement automatique via API)
 - Modal de détail cliquable sur les recos IA (avec boutons Ajouter / Ne plus suggérer)
 - Liste "Mes envies" : Table DB `wishlist`, API `/api/wishlist`, page `/wishlist`
@@ -85,24 +87,20 @@
 - **Librairie suggérée :** react-calendar ou custom grid
 - **Où :** Nouvelle page `/stats/calendar`
 
-### 3.6 Prochaines sorties (À FAIRE)
-- [ ] Liste des prochaines sorties pour les séries qu'on suit
-- **Cas d'usage :**
-  - Nouveau tome d'une série de livres qu'on lit
-  - Nouvelle saison d'une série TV qu'on regarde
-  - Suite d'un film (si annoncée)
-- **Sources de données :**
-  - Livres : Hardcover API (série info) ou Google Books
-  - Séries TV : TMDB API (`/tv/{id}` contient `next_episode_to_air`)
-  - Films : TMDB API (collections, sequels annoncés)
-- **UI possible :**
-  - Section "À venir" sur le dashboard
-  - Page dédiée `/upcoming` avec calendrier
-  - Notifications (optionnel, plus complexe)
-- **Données à stocker :**
-  - Lien livre → série de livres (hardcover_series_id)
-  - Date de sortie prévue (si connue)
-- **Où :** Nouvelle page `/upcoming` ou section sur dashboard
+### 3.6 Prochaines sorties (TERMINÉ - MVP Séries TV)
+- [x] Liste des prochaines sorties pour les séries qu'on suit
+- **Implémenté :**
+  - Page `/upcoming` avec liste des prochains épisodes groupés par mois
+  - API `/api/upcoming` avec rafraîchissement intelligent (max 5 séries/requête)
+  - Section "À venir" sur le dashboard avec aperçu des 3 prochaines sorties
+  - Migration DB : `next_episode_air_date`, `next_episode_season`, `next_episode_number`, `next_episode_name`
+  - UI avec codes couleur : vert (aujourd'hui), orange (imminent), normal (plus tard)
+  - Bouton refresh manuel
+- **Sources de données utilisées :**
+  - Séries TV : TMDB API (`/tv/{id}` → `next_episode_to_air`)
+- **À faire plus tard (extensions possibles) :**
+  - Livres : Intégrer Hardcover API pour les prochains tomes de séries
+  - Films : Vérifier les collections TMDB pour les suites annoncées
 
 ---
 

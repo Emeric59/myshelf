@@ -1,13 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Book, Film, Tv, Search, Sparkles, BarChart3, Loader2, ChevronRight, Play } from "lucide-react"
+import { Book, Film, Tv, Search, Sparkles, BarChart3, Loader2, ChevronRight, Play, Calendar } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { BottomNav } from "@/components/layout"
+import type { UpcomingRelease } from "@/types"
 
 interface LibraryCounts {
   books: number
@@ -28,15 +29,17 @@ interface CurrentMedia {
 export default function Home() {
   const [counts, setCounts] = useState<LibraryCounts>({ books: 0, movies: 0, shows: 0 })
   const [currentMedia, setCurrentMedia] = useState<CurrentMedia[]>([])
+  const [upcomingReleases, setUpcomingReleases] = useState<UpcomingRelease[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [booksRes, moviesRes, showsRes] = await Promise.all([
+        const [booksRes, moviesRes, showsRes, upcomingRes] = await Promise.all([
           fetch("/api/books"),
           fetch("/api/movies"),
           fetch("/api/shows"),
+          fetch("/api/upcoming"),
         ])
 
         interface BookItem {
@@ -63,10 +66,11 @@ export default function Home() {
           total_episodes?: number
         }
 
-        const [booksData, moviesData, showsData] = await Promise.all([
+        const [booksData, moviesData, showsData, upcomingData] = await Promise.all([
           booksRes.json() as Promise<{ total: number; books: BookItem[] }>,
           moviesRes.json() as Promise<{ total: number }>,
           showsRes.json() as Promise<{ total: number; shows: ShowItem[] }>,
+          upcomingRes.ok ? upcomingRes.json() as Promise<{ upcoming: UpcomingRelease[] }> : { upcoming: [] },
         ])
 
         setCounts({
@@ -113,6 +117,9 @@ export default function Home() {
         })
 
         setCurrentMedia(current)
+
+        // Set upcoming releases (max 3 for dashboard preview)
+        setUpcomingReleases((upcomingData.upcoming || []).slice(0, 3))
       } catch (error) {
         console.error("Error fetching data:", error)
       } finally {
@@ -242,6 +249,97 @@ export default function Home() {
                   </Card>
                 </Link>
               ))}
+            </div>
+          </section>
+        )}
+
+        {/* Upcoming Releases */}
+        {upcomingReleases.length > 0 && (
+          <section className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-display text-lg font-medium flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                À venir
+              </h3>
+              <Link href="/upcoming">
+                <Button variant="ghost" size="sm">
+                  Voir tout
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </Link>
+            </div>
+            <div className="space-y-3">
+              {upcomingReleases.map((release, index) => {
+                const releaseDate = new Date(release.release_date)
+                const today = new Date()
+                today.setHours(0, 0, 0, 0)
+                const diffDays = Math.ceil(
+                  (releaseDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+                )
+                const isImminent = diffDays <= 3
+                const isToday = diffDays === 0
+
+                const formatDate = () => {
+                  if (isToday) return "Aujourd'hui"
+                  if (diffDays === 1) return "Demain"
+                  if (diffDays <= 7) return `Dans ${diffDays} j`
+                  return releaseDate.toLocaleDateString("fr-FR", {
+                    day: "numeric",
+                    month: "short",
+                  })
+                }
+
+                return (
+                  <Link key={`${release.media_id}-${index}`} href={`/shows/${release.media_id}`} prefetch={false}>
+                    <Card
+                      className={`hover:border-primary transition-colors ${
+                        isToday
+                          ? "border-green-500 bg-green-500/5"
+                          : isImminent
+                            ? "border-orange-500/50"
+                            : ""
+                      }`}
+                    >
+                      <CardContent className="p-3">
+                        <div className="flex gap-3 items-center">
+                          <div className="w-10 h-14 rounded overflow-hidden bg-muted flex-shrink-0">
+                            {release.poster_url ? (
+                              <Image
+                                src={release.poster_url}
+                                alt={release.title}
+                                width={40}
+                                height={56}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Tv className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium truncate text-sm">{release.title}</h4>
+                            <p className="text-xs text-primary">{release.release_info}</p>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <p
+                              className={`text-sm font-medium ${
+                                isToday
+                                  ? "text-green-600"
+                                  : isImminent
+                                    ? "text-orange-600"
+                                    : "text-muted-foreground"
+                              }`}
+                            >
+                              {formatDate()}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                )
+              })}
             </div>
           </section>
         )}

@@ -290,3 +290,22 @@ export interface WishlistItem {
   reason?: string
   added_at?: string
 }
+
+// Upcoming Release
+export interface UpcomingRelease {
+  media_type: 'show' | 'movie' | 'book'
+  media_id: string
+  title: string
+  poster_url?: string
+  release_date: string
+  release_info: string // e.g., "S3E1 - Episode Title" or "Tome 5"
+  status?: string // user status (watching, to_watch, etc.)
+}
+
+// Next Episode Info (for shows)
+export interface NextEpisodeInfo {
+  air_date: string | null
+  episode_number: number
+  season_number: number
+  name?: string
+}

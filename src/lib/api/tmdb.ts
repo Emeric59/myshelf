@@ -23,6 +23,17 @@ export interface TMDBMovie {
   original_language: string
 }
 
+export interface TMDBNextEpisode {
+  id: number
+  name: string
+  overview: string
+  air_date: string | null
+  episode_number: number
+  season_number: number
+  runtime?: number
+  still_path?: string | null
+}
+
 export interface TMDBShow {
   id: number
   name: string
@@ -42,6 +53,8 @@ export interface TMDBShow {
   episode_run_time?: number[]
   created_by?: { id: number; name: string }[]
   original_language: string
+  next_episode_to_air?: TMDBNextEpisode | null
+  last_episode_to_air?: TMDBNextEpisode | null
 }
 
 export interface TMDBCredits {
@@ -309,5 +322,11 @@ export function normalizeShow(show: TMDBShow & { credits?: TMDBCredits; "watch/p
     streaming_providers: show["watch/providers"]
       ? extractFrenchProviders(show["watch/providers"])
       : undefined,
+    next_episode_to_air: show.next_episode_to_air ? {
+      air_date: show.next_episode_to_air.air_date,
+      episode_number: show.next_episode_to_air.episode_number,
+      season_number: show.next_episode_to_air.season_number,
+      name: show.next_episode_to_air.name,
+    } : undefined,
   }
 }
