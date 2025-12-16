@@ -297,13 +297,19 @@ ${context.excludedTitles.slice(0, 50).join(", ") || "Aucun"}
 
 FORMAT JSON OBLIGATOIRE:
 {
-  "message": "Message enthousiaste présentant tes 3 coups de cœur surprise",
+  "message": "Message COURT (1 phrase max, ~15 mots) présentant tes 3 choix",
   "recommendations": [
     {"type": "book", "title": "Titre exact", "author": "Auteur", "year": "20XX", "reason": "Pourquoi c'est un classique moderne à découvrir"},
     {"type": "movie", "title": "Titre exact", "year": "20XX", "reason": "Pourquoi c'est un incontournable"},
     {"type": "show", "title": "Titre exact", "year": "20XX", "reason": "Pourquoi cette série est culte"}
   ]
 }
+
+RÈGLES MESSAGE:
+- Maximum 15-20 mots
+- Pas de "Préparez-vous", pas de longs préambules
+- Style décontracté, pas pompeux
+- Exemple: "Voici 3 pépites qui devraient te plaire !" ou "J'ai trouvé le trio parfait pour toi !"
 
 IMPORTANT: Exactement 3 recommandations, une de chaque type!`
 

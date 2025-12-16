@@ -148,13 +148,13 @@ export async function getStats(db: D1Database): Promise<StatsData> {
     `).first(),
 
     // Count episodes watched (from watched_episodes table)
-    // Also sum the runtime from show_seasons if available, otherwise use 45 min default
+    // Join with shows to get episode_runtime, fallback to 45 min if NULL
     db.prepare(`
       SELECT
         COUNT(*) as total_episodes,
-        SUM(COALESCE(ss.episode_runtime, 45)) as total_minutes
+        SUM(COALESCE(s.episode_runtime, 45)) as total_minutes
       FROM watched_episodes we
-      LEFT JOIN show_seasons ss ON we.show_id = ss.show_id AND we.season_number = ss.season_number
+      JOIN shows s ON we.show_id = s.id
     `).first(),
   ])
 
