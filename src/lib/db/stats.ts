@@ -131,12 +131,18 @@ export async function getStats(db: D1Database): Promise<StatsData> {
       WHERE year = ?
     `).bind(currentYear).first(),
 
-    // Total pages read
+    // Total pages read (finished books: all pages, reading books: current_page)
     db.prepare(`
-      SELECT SUM(b.page_count) as total_pages
+      SELECT SUM(
+        CASE
+          WHEN ub.status = 'read' THEN b.page_count
+          WHEN ub.status = 'reading' THEN COALESCE(ub.current_page, 0)
+          ELSE 0
+        END
+      ) as total_pages
       FROM user_books ub
       JOIN books b ON ub.book_id = b.id
-      WHERE ub.status = 'read'
+      WHERE ub.status IN ('read', 'reading')
     `).first(),
 
     // Total watch time for movies (in minutes)
