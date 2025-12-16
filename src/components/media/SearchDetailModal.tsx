@@ -1,7 +1,8 @@
 "use client"
 
+import { useState } from "react"
 import Image from "next/image"
-import { Book, Film, Tv, Plus, Check, Loader2 } from "lucide-react"
+import { Book, Film, Tv, Plus, Check, Loader2, Heart } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -61,6 +62,9 @@ export function SearchDetailModal({
   onAdd,
   isAdding = false,
 }: SearchDetailModalProps) {
+  const [isSavingWishlist, setIsSavingWishlist] = useState(false)
+  const [savedToWishlist, setSavedToWishlist] = useState(false)
+
   if (!result) return null
 
   const Icon = typeIcons[result.type]
@@ -69,6 +73,38 @@ export function SearchDetailModal({
   const handleAdd = async () => {
     await onAdd(result)
     onOpenChange(false)
+  }
+
+  const handleSaveToWishlist = async () => {
+    setIsSavingWishlist(true)
+    try {
+      const res = await fetch("/api/wishlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mediaType: result.type,
+          externalId: result.id,
+          title: result.title,
+          subtitle: result.subtitle,
+          imageUrl: result.image_url,
+          description: result.description,
+          genres: result.genres,
+        }),
+      })
+      if (res.ok || res.status === 409) {
+        setSavedToWishlist(true)
+        onOpenChange(false)
+      } else {
+        const errorData = await res.json().catch(() => ({}))
+        console.error("Wishlist API error:", res.status, errorData)
+        alert("Erreur lors de la sauvegarde.")
+      }
+    } catch (error) {
+      console.error("Error saving to wishlist:", error)
+      alert("Erreur de connexion.")
+    } finally {
+      setIsSavingWishlist(false)
+    }
   }
 
   return (
@@ -214,11 +250,31 @@ export function SearchDetailModal({
           </div>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="flex-col gap-2 sm:flex-row">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Annuler
           </Button>
-          {result.in_library ? (
+          {!result.in_library && !savedToWishlist && (
+            <Button
+              variant="outline"
+              className="text-pink-500 hover:text-pink-600 hover:bg-pink-50"
+              onClick={handleSaveToWishlist}
+              disabled={isSavingWishlist}
+            >
+              {isSavingWishlist ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Heart className="w-4 h-4 mr-2" />
+              )}
+              Mes envies
+            </Button>
+          )}
+          {savedToWishlist ? (
+            <Button disabled variant="secondary">
+              <Heart className="w-4 h-4 mr-2 fill-current" />
+              Sauvegardé
+            </Button>
+          ) : result.in_library ? (
             <Button disabled variant="secondary">
               <Check className="w-4 h-4 mr-2" />
               Déjà ajouté
@@ -230,7 +286,7 @@ export function SearchDetailModal({
               ) : (
                 <Plus className="w-4 h-4 mr-2" />
               )}
-              Ajouter à ma bibliothèque
+              Ajouter
             </Button>
           )}
         </DialogFooter>

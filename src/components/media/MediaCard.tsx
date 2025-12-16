@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { Book, Film, Tv, Plus, Check } from "lucide-react"
+import { Book, Film, Tv, Plus, Check, Heart, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -34,6 +34,9 @@ interface MediaCardProps {
   onAdd?: () => void
   onClick?: () => void
   onStatusChange?: (status: string) => void
+  onAddToWishlist?: () => void
+  isAddingToWishlist?: boolean
+  inWishlist?: boolean
   variant?: "default" | "compact" | "search"
   className?: string
 }
@@ -69,6 +72,9 @@ export function MediaCard({
   inLibrary,
   onAdd,
   onClick,
+  onAddToWishlist,
+  isAddingToWishlist,
+  inWishlist,
   variant = "default",
   className,
 }: MediaCardProps) {
@@ -220,17 +226,42 @@ export function MediaCard({
           </div>
 
           {/* Actions */}
-          <div className="flex-shrink-0">
-            {inLibrary ? (
+          <div className="flex flex-col gap-1 flex-shrink-0">
+            {inWishlist ? (
+              <Button variant="secondary" size="sm" disabled>
+                <Heart className="w-4 h-4 mr-1 fill-current" />
+                Sauvé
+              </Button>
+            ) : inLibrary ? (
               <Button variant="secondary" size="sm" disabled>
                 <Check className="w-4 h-4 mr-1" />
                 Ajouté
               </Button>
             ) : (
-              <Button variant="default" size="sm" onClick={onAdd}>
-                <Plus className="w-4 h-4 mr-1" />
-                Ajouter
-              </Button>
+              <>
+                <Button variant="default" size="sm" onClick={onAdd}>
+                  <Plus className="w-4 h-4 mr-1" />
+                  Ajouter
+                </Button>
+                {onAddToWishlist && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-pink-500"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onAddToWishlist()
+                    }}
+                    disabled={isAddingToWishlist}
+                  >
+                    {isAddingToWishlist ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Heart className="w-4 h-4" />
+                    )}
+                  </Button>
+                )}
+              </>
             )}
           </div>
         </CardContent>

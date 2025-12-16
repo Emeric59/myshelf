@@ -57,6 +57,10 @@ function SearchContent() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isAdding, setIsAdding] = useState(false)
 
+  // Wishlist state
+  const [wishlistItems, setWishlistItems] = useState<Set<string>>(new Set())
+  const [addingToWishlist, setAddingToWishlist] = useState<Set<string>>(new Set())
+
   const performSearch = useCallback(async () => {
     if (!query.trim()) {
       setResults([])
@@ -157,6 +161,43 @@ function SearchContent() {
       console.error("Error adding to library:", error)
     } finally {
       setIsAdding(false)
+    }
+  }
+
+  const handleAddToWishlist = async (result: SearchResult) => {
+    const key = `${result.type}-${result.id}`
+    setAddingToWishlist((prev) => new Set(prev).add(key))
+
+    try {
+      const res = await fetch("/api/wishlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mediaType: result.type,
+          externalId: result.id,
+          title: result.title,
+          subtitle: result.subtitle,
+          imageUrl: result.image_url,
+          description: result.description,
+          genres: result.genres,
+        }),
+      })
+
+      if (res.ok || res.status === 409) {
+        setWishlistItems((prev) => new Set(prev).add(key))
+      } else {
+        console.error("Wishlist API error:", res.status)
+        alert("Erreur lors de la sauvegarde.")
+      }
+    } catch (error) {
+      console.error("Error saving to wishlist:", error)
+      alert("Erreur de connexion.")
+    } finally {
+      setAddingToWishlist((prev) => {
+        const next = new Set(prev)
+        next.delete(key)
+        return next
+      })
     }
   }
 
@@ -294,6 +335,9 @@ function SearchContent() {
                               seriesName={result.seriesName}
                               sources={result.sources}
                               inLibrary={result.in_library}
+                              inWishlist={wishlistItems.has(`book-${result.id}`)}
+                              isAddingToWishlist={addingToWishlist.has(`book-${result.id}`)}
+                              onAddToWishlist={() => handleAddToWishlist(result)}
                               onClick={() => openDetailModal(result)}
                               onAdd={() => openDetailModal(result)}
                               variant="search"
@@ -321,6 +365,9 @@ function SearchContent() {
                               rating={result.rating}
                               year={result.year}
                               inLibrary={result.in_library}
+                              inWishlist={wishlistItems.has(`movie-${result.id}`)}
+                              isAddingToWishlist={addingToWishlist.has(`movie-${result.id}`)}
+                              onAddToWishlist={() => handleAddToWishlist(result)}
                               onClick={() => openDetailModal(result)}
                               onAdd={() => openDetailModal(result)}
                               variant="search"
@@ -348,6 +395,9 @@ function SearchContent() {
                               rating={result.rating}
                               year={result.year}
                               inLibrary={result.in_library}
+                              inWishlist={wishlistItems.has(`show-${result.id}`)}
+                              isAddingToWishlist={addingToWishlist.has(`show-${result.id}`)}
+                              onAddToWishlist={() => handleAddToWishlist(result)}
                               onClick={() => openDetailModal(result)}
                               onAdd={() => openDetailModal(result)}
                               variant="search"
@@ -376,6 +426,9 @@ function SearchContent() {
                         seriesName={result.seriesName}
                         sources={result.sources}
                         inLibrary={result.in_library}
+                        inWishlist={wishlistItems.has(`${result.type}-${result.id}`)}
+                        isAddingToWishlist={addingToWishlist.has(`${result.type}-${result.id}`)}
+                        onAddToWishlist={() => handleAddToWishlist(result)}
                         onClick={() => openDetailModal(result)}
                         onAdd={() => openDetailModal(result)}
                         variant="search"
