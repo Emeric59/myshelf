@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { RatingStars } from "@/components/media"
 import { Label } from "@/components/ui/label"
+import { stripHtml } from "@/lib/utils"
 import type { Movie, UserMovie, MovieStatus } from "@/types"
 
 const statusOptions: { value: MovieStatus; label: string }[] = [
@@ -318,7 +319,7 @@ export default function MovieDetailPage({ params }: { params: Promise<{ id: stri
               <CardTitle className="text-lg">Synopsis</CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
-              <p className="text-sm text-muted-foreground">{movie.description}</p>
+              <p className="text-sm text-muted-foreground">{stripHtml(movie.description)}</p>
             </CardContent>
           </Card>
         )}

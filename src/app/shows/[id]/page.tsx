@@ -25,6 +25,7 @@ import { Progress } from "@/components/ui/progress"
 import { Textarea } from "@/components/ui/textarea"
 import { RatingStars } from "@/components/media"
 import { Label } from "@/components/ui/label"
+import { stripHtml } from "@/lib/utils"
 import type { Show, UserShow, ShowStatus } from "@/types"
 
 const statusOptions: { value: ShowStatus; label: string }[] = [
@@ -593,7 +594,7 @@ export default function ShowDetailPage({ params }: { params: Promise<{ id: strin
               <CardTitle className="text-lg">Synopsis</CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
-              <p className="text-sm text-muted-foreground">{show.description}</p>
+              <p className="text-sm text-muted-foreground">{stripHtml(show.description)}</p>
             </CardContent>
           </Card>
         )}

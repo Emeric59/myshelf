@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { stripHtml } from "@/lib/utils"
 import type { SearchResult } from "@/types"
 
 // Helper to capitalize first letter
@@ -136,7 +137,7 @@ export function SearchDetailModal({
               <div>
                 <h4 className="text-sm font-medium mb-2">Synopsis</h4>
                 <p className="text-sm text-muted-foreground line-clamp-4">
-                  {result.description}
+                  {stripHtml(result.description)}
                 </p>
               </div>
             )}

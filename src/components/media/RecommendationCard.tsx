@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog"
+import { stripHtml } from "@/lib/utils"
 import type { SearchResult } from "@/types"
 
 // Helper to capitalize first letter
@@ -97,6 +98,7 @@ export function RecommendationCard({
     setIsAdding(true)
     try {
       await onAdd()
+      setModalOpen(false)
     } finally {
       setIsAdding(false)
     }
@@ -111,7 +113,7 @@ export function RecommendationCard({
   const imageUrl = enrichedData?.image_url
   const displayTitle = enrichedData?.title || title
   const displaySubtitle = enrichedData?.subtitle || subtitle
-  const description = enrichedData?.description
+  const description = enrichedData?.description ? stripHtml(enrichedData.description) : undefined
   const genres = enrichedData?.genres
   const tropes = enrichedData?.tropes
   const moods = enrichedData?.moods

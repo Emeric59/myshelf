@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { stripHtml } from "@/lib/utils"
 import type { Book, UserBook, BookStatus } from "@/types"
 
 const statusOptions: { value: BookStatus; label: string; color: string }[] = [
@@ -473,7 +474,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
               <CardTitle className="text-lg">Synopsis</CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
-              <p className="text-sm text-muted-foreground">{book.description}</p>
+              <p className="text-sm text-muted-foreground">{stripHtml(book.description)}</p>
             </CardContent>
           </Card>
         )}
