@@ -4,6 +4,9 @@
 
 import type { D1Database } from '@cloudflare/workers-types'
 
+// Temps de lecture par page en minutes (configurable)
+export const READING_MINUTES_PER_PAGE = 2
+
 export interface StatsData {
   books: {
     total: number
@@ -12,12 +15,14 @@ export interface StatsData {
     toRead: number
     pagesRead: number
     avgRating: number | null
+    totalReadingMinutes: number // Temps total de lecture estimé
   }
   movies: {
     total: number
     watched: number
     toWatch: number
     avgRating: number | null
+    totalWatchMinutes: number // Temps total de visionnage
   }
   shows: {
     total: number
@@ -25,6 +30,8 @@ export interface StatsData {
     watching: number
     toWatch: number
     avgRating: number | null
+    totalWatchMinutes: number // Temps total de visionnage
+    episodesWatched: number // Nombre d'épisodes vus
   }
   currentYear: {
     booksRead: number
@@ -36,6 +43,7 @@ export interface StatsData {
     movies: number
     shows: number
   } | null
+  totalTimeMinutes: number // Temps total tous médias confondus
 }
 
 // Récupérer toutes les statistiques
@@ -54,6 +62,8 @@ export async function getStats(db: D1Database): Promise<StatsData> {
     showsThisYear,
     goals,
     pagesRead,
+    moviesWatchTime,
+    episodesWatched,
   ] = await Promise.all([
     // Books stats
     db.prepare(`
@@ -128,7 +138,32 @@ export async function getStats(db: D1Database): Promise<StatsData> {
       JOIN books b ON ub.book_id = b.id
       WHERE ub.status = 'read'
     `).first(),
+
+    // Total watch time for movies (in minutes)
+    db.prepare(`
+      SELECT SUM(m.runtime) as total_minutes
+      FROM user_movies um
+      JOIN movies m ON um.movie_id = m.id
+      WHERE um.status = 'watched'
+    `).first(),
+
+    // Count episodes watched (from watched_episodes table)
+    // Also sum the runtime from show_seasons if available, otherwise use 45 min default
+    db.prepare(`
+      SELECT
+        COUNT(*) as total_episodes,
+        SUM(COALESCE(ss.episode_runtime, 45)) as total_minutes
+      FROM watched_episodes we
+      LEFT JOIN show_seasons ss ON we.show_id = ss.show_id AND we.season_number = ss.season_number
+    `).first(),
   ])
+
+  // Calculate time totals
+  const totalPagesRead = (pagesRead?.total_pages as number) || 0
+  const bookReadingMinutes = totalPagesRead * READING_MINUTES_PER_PAGE
+  const movieWatchMinutes = (moviesWatchTime?.total_minutes as number) || 0
+  const showWatchMinutes = (episodesWatched?.total_minutes as number) || 0
+  const totalEpisodesWatched = (episodesWatched?.total_episodes as number) || 0
 
   return {
     books: {
@@ -136,14 +171,16 @@ export async function getStats(db: D1Database): Promise<StatsData> {
       read: (bookStats?.read as number) || 0,
       reading: (bookStats?.reading as number) || 0,
       toRead: (bookStats?.to_read as number) || 0,
-      pagesRead: (pagesRead?.total_pages as number) || 0,
+      pagesRead: totalPagesRead,
       avgRating: bookStats?.avg_rating as number | null,
+      totalReadingMinutes: bookReadingMinutes,
     },
     movies: {
       total: (movieStats?.total as number) || 0,
       watched: (movieStats?.watched as number) || 0,
       toWatch: (movieStats?.to_watch as number) || 0,
       avgRating: movieStats?.avg_rating as number | null,
+      totalWatchMinutes: movieWatchMinutes,
     },
     shows: {
       total: (showStats?.total as number) || 0,
@@ -151,6 +188,8 @@ export async function getStats(db: D1Database): Promise<StatsData> {
       watching: (showStats?.watching as number) || 0,
       toWatch: (showStats?.to_watch as number) || 0,
       avgRating: showStats?.avg_rating as number | null,
+      totalWatchMinutes: showWatchMinutes,
+      episodesWatched: totalEpisodesWatched,
     },
     currentYear: {
       booksRead: (booksThisYear?.count as number) || 0,
@@ -162,6 +201,7 @@ export async function getStats(db: D1Database): Promise<StatsData> {
       movies: (goals.movies_goal as number) || 0,
       shows: (goals.shows_goal as number) || 0,
     } : null,
+    totalTimeMinutes: bookReadingMinutes + movieWatchMinutes + showWatchMinutes,
   }
 }
 

@@ -17,6 +17,9 @@
 - **Filtre par genre** : Recherche, recos mood, chat IA
 - **Fix statut recherche** : API `/api/search` vérifie maintenant `in_library` et `in_wishlist` via DB
 - **Fix modal state** : Reset du state quand on change d'item + callback `onWishlistAdd` pour sync parent
+- **Filtres combinés** : Genre + statut sur pages `/books`, `/movies`, `/shows`
+- **Temps total visionnage** : Stats sur `/stats` avec lecture estimée et visionnage réel
+- **Mode surprise** : Bouton sur `/recommendations` pour 3 classiques modernes (livre/film/série)
 
 **Bugs corrigés :**
 - Items déjà dans bibliothèque/wishlist maintenant correctement marqués dans les résultats de recherche
@@ -41,13 +44,52 @@
 
 ---
 
-## Priorité 3 - Nice to have
+## Priorité 3 - Nice to have (TERMINÉ PARTIELLEMENT)
 
-- [ ] **Mode surprise** - Reco aléatoire basée sur les goûts
-- [ ] **Temps total visionnage** - Stats séries/films
-- [ ] **Graphique évolution/mois** - Visualisation des lectures/visionnages
-- [ ] **Filtres combinés** - Genre + statut dans la bibliothèque
-- [ ] **Vue calendrier** - Lectures/visionnages par date
+### 3.1 Filtres combinés (TERMINÉ)
+- [x] Genre + statut dans la bibliothèque
+- **Implémenté :** Select genre + badges statut sur `/books`, `/movies`, `/shows`
+- **Fichier utilitaire :** `src/lib/constants/genres.ts`
+
+### 3.2 Temps total visionnage (TERMINÉ)
+- [x] Stats séries/films + temps de lecture livres
+- **Films :** Vraie durée via runtime TMDB
+- **Séries :** Durée × épisodes vus (via `watched_episodes`)
+- **Livres :** Pages × 2 min/page (TEMPORAIRE - voir QUESTIONS.md)
+- **UI :** Section "Temps total" sur `/stats` avec total global
+- **Fonctions :** `formatDuration()` et `formatLongDuration()` dans `lib/utils.ts`
+
+### 3.3 Mode surprise (TERMINÉ)
+- [x] Bouton sur la page `/recommendations`
+- **API :** `/api/recommendations/surprise` (GET)
+- **Gemini :** Génère 1 livre + 1 film + 1 série
+- **Contraintes :** Classiques modernes (2010+), bien notés, basés sur goûts utilisateur
+- **UI :** Card "Surprise" avec bouton Go, message IA + 3 recommandations
+
+### 3.4 Graphique évolution/mois (À FAIRE)
+- [ ] Visualisation des lectures/visionnages dans le temps
+- **Période :** Configurable (année en cours, 12 derniers mois, custom)
+- **Métriques multiples :**
+  - Nombre de médias terminés
+  - Temps passé (heures)
+  - Pages lues (livres)
+- **Graphiques :**
+  - 1 graphique par type de média (livres, films, séries)
+  - 1 graphique total combiné
+- **Librairie suggérée :** recharts ou chart.js
+- **Où :** Nouvelle page `/stats/charts` ou section dans `/stats`
+
+### 3.5 Vue calendrier (COMPLEXE - À FAIRE PLUS TARD)
+- [ ] Calendrier des lectures/visionnages
+- **Logique des dates :**
+  - Films : Date où on marque "Vu" (status = watched)
+  - Livres : Date début (1ère page lue) + Date fin (status = read)
+  - Séries : Date début (1er épisode vu) + Date fin (status = completed)
+- **IMPORTANT :** Ne PAS afficher les médias importés en masse (avant l'app)
+  - Solution : Ajouter colonne `imported_at` ou flag `is_imported`
+  - Seuls les médias trackés "naturellement" apparaissent au calendrier
+- **Librairie suggérée :** react-calendar ou custom grid
+- **Où :** Nouvelle page `/stats/calendar`
 
 ---
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Sparkles, MessageCircle, RefreshCw, Loader2, Book, Film, Tv, Heart } from "lucide-react"
+import { Sparkles, MessageCircle, RefreshCw, Loader2, Book, Film, Tv, Heart, Shuffle } from "lucide-react"
 import { Header, PageHeader } from "@/components/layout"
 import { BottomNav } from "@/components/layout"
 import { Button } from "@/components/ui/button"
@@ -59,6 +59,10 @@ export default function RecommendationsPage() {
   const [selectedMood, setSelectedMood] = useState<string | null>(null)
   const [selectedType, setSelectedType] = useState<MediaTypeFilter>("all")
   const [selectedGenre, setSelectedGenre] = useState<string>("")
+
+  // Surprise mode state
+  const [isSurpriseLoading, setIsSurpriseLoading] = useState(false)
+  const [surpriseMessage, setSurpriseMessage] = useState<string | null>(null)
 
   // Dismiss dialog state
   const [dismissDialogOpen, setDismissDialogOpen] = useState(false)
@@ -130,6 +134,46 @@ export default function RecommendationsPage() {
   const handleRefresh = async () => {
     if (selectedMood) {
       await handleMoodSelect(selectedMood)
+    }
+  }
+
+  // Handle surprise recommendations
+  const handleSurprise = async () => {
+    setIsSurpriseLoading(true)
+    setSelectedMood(null)
+    setSurpriseMessage(null)
+    setRecommendations([])
+
+    try {
+      const response = await fetch("/api/recommendations/surprise")
+      if (!response.ok) throw new Error("Failed to get surprise recommendations")
+
+      const data = await response.json() as {
+        message?: string
+        recommendations?: Array<{
+          type: "book" | "movie" | "show"
+          title: string
+          author?: string
+          year?: string
+          reason: string
+        }>
+      }
+
+      // Adapter le format de réponse
+      const formattedRecos: RecommendationItem[] = (data.recommendations || []).map((reco, index) => ({
+        id: `surprise-${index}`,
+        type: reco.type,
+        title: reco.title,
+        subtitle: reco.author || reco.year,
+        reason: reco.reason,
+      }))
+
+      setRecommendations(formattedRecos)
+      setSurpriseMessage(data.message || null)
+    } catch (error) {
+      console.error("Error getting surprise recommendations:", error)
+    } finally {
+      setIsSurpriseLoading(false)
     }
   }
 
@@ -241,20 +285,48 @@ export default function RecommendationsPage() {
         />
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
+        <div className="grid grid-cols-3 gap-3 mb-6">
           {/* Ask AI Card */}
           <Card className="border-primary/20 bg-primary/5">
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex flex-col items-center text-center gap-2">
                 <div className="p-2 rounded-full bg-primary/10">
                   <MessageCircle className="h-5 w-5 text-primary" />
                 </div>
-                <h3 className="font-medium text-sm">Demander à l'IA</h3>
-                <Button asChild size="sm" className="w-full">
+                <h3 className="font-medium text-xs">Demander</h3>
+                <Button asChild size="sm" className="w-full text-xs px-2">
                   <Link href="/recommendations/ask">
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Discuter
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    IA
                   </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Surprise Card */}
+          <Card className="border-amber-200 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/20">
+            <CardContent className="p-3">
+              <div className="flex flex-col items-center text-center gap-2">
+                <div className="p-2 rounded-full bg-amber-100 dark:bg-amber-900/30">
+                  <Shuffle className="h-5 w-5 text-amber-600" />
+                </div>
+                <h3 className="font-medium text-xs">Surprise</h3>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full text-xs px-2 border-amber-200 hover:bg-amber-100 dark:border-amber-800 dark:hover:bg-amber-900/30"
+                  onClick={handleSurprise}
+                  disabled={isSurpriseLoading}
+                >
+                  {isSurpriseLoading ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <>
+                      <Shuffle className="h-3 w-3 mr-1 text-amber-600" />
+                      Go
+                    </>
+                  )}
                 </Button>
               </div>
             </CardContent>
@@ -262,15 +334,15 @@ export default function RecommendationsPage() {
 
           {/* Wishlist Card */}
           <Card className="border-pink-200 bg-pink-50/50 dark:border-pink-900 dark:bg-pink-950/20">
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex flex-col items-center text-center gap-2">
                 <div className="p-2 rounded-full bg-pink-100 dark:bg-pink-900/30">
                   <Heart className="h-5 w-5 text-pink-500" />
                 </div>
-                <h3 className="font-medium text-sm">Mes envies</h3>
-                <Button asChild size="sm" variant="outline" className="w-full border-pink-200 hover:bg-pink-100 dark:border-pink-800 dark:hover:bg-pink-900/30">
+                <h3 className="font-medium text-xs">Envies</h3>
+                <Button asChild size="sm" variant="outline" className="w-full text-xs px-2 border-pink-200 hover:bg-pink-100 dark:border-pink-800 dark:hover:bg-pink-900/30">
                   <Link href="/wishlist">
-                    <Heart className="h-4 w-4 mr-2 text-pink-500" />
+                    <Heart className="h-3 w-3 mr-1 text-pink-500" />
                     Voir
                   </Link>
                 </Button>
@@ -348,13 +420,29 @@ export default function RecommendationsPage() {
         {/* Recommendations List */}
         <section>
           <h3 className="font-display text-lg font-medium mb-4">
-            {selectedMood ? "Suggestions" : "Suggestions du jour"}
+            {surpriseMessage ? "Surprise !" : selectedMood ? "Suggestions" : "Suggestions du jour"}
           </h3>
 
-          {isLoading ? (
+          {/* Surprise message */}
+          {surpriseMessage && (
+            <Card className="mb-4 border-amber-200 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/20">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <Shuffle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm">{surpriseMessage}</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {isLoading || isSurpriseLoading ? (
             <div className="flex flex-col items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-              <p className="text-muted-foreground">L'IA cherche des recommandations...</p>
+              <p className="text-muted-foreground">
+                {isSurpriseLoading
+                  ? "L'IA prépare une surprise..."
+                  : "L'IA cherche des recommandations..."}
+              </p>
             </div>
           ) : recommendations.length > 0 ? (
             <div className="space-y-3">

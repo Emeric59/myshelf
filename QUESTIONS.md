@@ -7,7 +7,11 @@
 
 ## Questions en attente
 
-*(Aucune question pour le moment)*
+### Temps de lecture par page (En attente)
+**Contexte :** Feature "Temps total de lecture/visionnage"
+**Question :** Quel est ton vrai temps de lecture moyen par page ?
+**Valeur actuelle :** 2 minutes par page (estimation par défaut)
+**Impact :** Calcul du temps total de lecture dans les stats
 
 ---
 

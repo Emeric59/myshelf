@@ -211,6 +211,155 @@ export async function getRecommendations(
   }
 }
 
+// Fonction pour les recommandations "surprise" (classiques modernes)
+export async function getSurpriseRecommendations(
+  context: UserContext
+): Promise<RecommendationResponse> {
+  const genAI = getGeminiClient()
+
+  const currentYear = new Date().getFullYear()
+  const minYear = currentYear - 15 // Maximum 15 ans
+
+  const lovedTropesStr = context.lovedTropes.length > 0
+    ? `Tropes adorés: ${context.lovedTropes.join(", ")}`
+    : ""
+  const likedTropesStr = context.likedTropes.length > 0
+    ? `Tropes appréciés: ${context.likedTropes.join(", ")}`
+    : ""
+  const blacklistedTropesStr = context.blacklistedTropes.length > 0
+    ? `TROPES INTERDITS (ne jamais recommander): ${context.blacklistedTropes.join(", ")}`
+    : ""
+
+  const topBooks = context.readBooks
+    .filter(b => b.rating && b.rating >= 4)
+    .slice(0, 5)
+    .map(b => `"${b.title}"`)
+    .join(", ")
+
+  const topMovies = context.watchedMovies
+    .filter(m => m.rating && m.rating >= 4)
+    .slice(0, 5)
+    .map(m => `"${m.title}"`)
+    .join(", ")
+
+  const topShows = context.watchedShows
+    .filter(s => s.rating && s.rating >= 4)
+    .slice(0, 5)
+    .map(s => `"${s.title}"`)
+    .join(", ")
+
+  // Extraire les genres préférés
+  const allGenres = [
+    ...context.readBooks.flatMap(b => b.genres || []),
+    ...context.watchedMovies.flatMap(m => m.genres || []),
+    ...context.watchedShows.flatMap(s => s.genres || [])
+  ]
+  const genreCounts = allGenres.reduce((acc, g) => {
+    acc[g] = (acc[g] || 0) + 1
+    return acc
+  }, {} as Record<string, number>)
+  const topGenres = Object.entries(genreCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([genre]) => genre)
+    .join(", ")
+
+  const systemPrompt = `Tu es un expert en recommandation de médias. Ta mission : trouver LE livre, LE film et LA série parfaits pour l'utilisateur.
+
+MISSION SPÉCIALE - MODE SURPRISE:
+Tu dois recommander exactement 3 médias: 1 livre, 1 film, 1 série.
+
+CRITÈRES OBLIGATOIRES:
+1. CLASSIQUES MODERNES: Des œuvres unanimement saluées, bestsellers, blockbusters, succès critiques
+2. SUCCÈS GARANTI: Note moyenne élevée (>4/5 ou >8/10), très populaires, recommandés par tous
+3. RÉCENT: Sortis entre ${minYear} et ${currentYear} (pas plus de 15 ans)
+4. PAS DE RISQUE: Des valeurs sûres qui plairont à coup sûr
+5. DIVERSITÉ: 3 types différents (livre, film, série)
+
+PROFIL UTILISATEUR:
+${topGenres ? `Genres préférés: ${topGenres}` : ""}
+${lovedTropesStr}
+${likedTropesStr}
+${blacklistedTropesStr}
+${topBooks ? `Livres aimés: ${topBooks}` : ""}
+${topMovies ? `Films aimés: ${topMovies}` : ""}
+${topShows ? `Séries aimées: ${topShows}` : ""}
+
+RÈGLES ABSOLUES:
+- Ne recommande JAMAIS un média avec un trope blacklisté
+- Ne recommande JAMAIS un média déjà vu/lu
+- UNIQUEMENT des médias qui existent RÉELLEMENT
+- Réponds en français
+- Ne recommande JAMAIS de making-of ou documentaires
+
+MÉDIAS À EXCLURE:
+${context.excludedTitles.slice(0, 50).join(", ") || "Aucun"}
+
+FORMAT JSON OBLIGATOIRE:
+{
+  "message": "Message enthousiaste présentant tes 3 coups de cœur surprise",
+  "recommendations": [
+    {"type": "book", "title": "Titre exact", "author": "Auteur", "year": "20XX", "reason": "Pourquoi c'est un classique moderne à découvrir"},
+    {"type": "movie", "title": "Titre exact", "year": "20XX", "reason": "Pourquoi c'est un incontournable"},
+    {"type": "show", "title": "Titre exact", "year": "20XX", "reason": "Pourquoi cette série est culte"}
+  ]
+}
+
+IMPORTANT: Exactement 3 recommandations, une de chaque type!`
+
+  try {
+    const result = await genAI.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `${systemPrompt}\n\n---\n\nGénère 3 recommandations surprise (1 livre, 1 film, 1 série) - des classiques modernes qui correspondent au profil de l'utilisateur.`,
+      config: {
+        thinkingConfig: {
+          thinkingBudget: 8192,
+        },
+      },
+    })
+
+    const responseText = result.candidates?.[0]?.content?.parts
+      ?.filter((part: { thought?: boolean }) => !part.thought)
+      ?.map((part: { text?: string }) => part.text)
+      ?.join("") || ""
+
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) {
+      return {
+        message: "Je n'ai pas pu générer de recommandations surprise. Réessaie !",
+        recommendations: []
+      }
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]) as RecommendationResponse
+
+    // Valider: exactement 1 de chaque type
+    const validRecommendations = parsed.recommendations
+      .filter(r => r.title && r.type && r.reason)
+      .filter(r => !context.excludedTitles.some(
+        excluded => excluded.toLowerCase() === r.title.toLowerCase()
+      ))
+
+    // S'assurer d'avoir 1 de chaque type
+    const book = validRecommendations.find(r => r.type === "book")
+    const movie = validRecommendations.find(r => r.type === "movie")
+    const show = validRecommendations.find(r => r.type === "show")
+
+    const finalRecommendations = [book, movie, show].filter(Boolean) as Recommendation[]
+
+    return {
+      message: parsed.message || "Voici mes 3 coups de cœur surprise pour toi !",
+      recommendations: finalRecommendations
+    }
+  } catch (error) {
+    console.error("Gemini API error (surprise):", error)
+    return {
+      message: "Désolé, j'ai rencontré un problème. Réessaie dans quelques instants !",
+      recommendations: []
+    }
+  }
+}
+
 // Fonction utilitaire pour construire le contexte depuis les données DB
 export function buildUserContext(data: {
   books: Array<{ title: string; author?: string; rating?: number; genres?: string; status: string }>

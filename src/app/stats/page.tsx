@@ -1,13 +1,14 @@
 "use client"
 
 import Link from "next/link"
-import { BarChart3, Target, Trophy, Book, Film, Tv, TrendingUp, Loader2 } from "lucide-react"
+import { BarChart3, Target, Trophy, Book, Film, Tv, TrendingUp, Loader2, Clock } from "lucide-react"
 import { Header, PageHeader } from "@/components/layout"
 import { BottomNav } from "@/components/layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ProgressBar } from "@/components/media"
 import { useStats } from "@/lib/hooks"
+import { formatDuration, formatLongDuration } from "@/lib/utils"
 
 export default function StatsPage() {
   const { stats, isLoading, error } = useStats()
@@ -46,6 +47,13 @@ export default function StatsPage() {
   const booksAvgRating = stats?.books?.avgRating
   const moviesAvgRating = stats?.movies?.avgRating
   const showsAvgRating = stats?.shows?.avgRating
+
+  // Time stats
+  const bookReadingMinutes = stats?.books?.totalReadingMinutes || 0
+  const movieWatchMinutes = stats?.movies?.totalWatchMinutes || 0
+  const showWatchMinutes = stats?.shows?.totalWatchMinutes || 0
+  const episodesWatched = stats?.shows?.episodesWatched || 0
+  const totalTimeMinutes = stats?.totalTimeMinutes || 0
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -91,6 +99,79 @@ export default function StatsPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Time Stats */}
+        <section className="mb-6">
+          <h3 className="font-display text-lg font-medium mb-4 flex items-center gap-2">
+            <Clock className="h-5 w-5 text-primary" />
+            Temps total
+          </h3>
+
+          {/* Total global */}
+          <Card className="mb-4 bg-primary/5 border-primary/20">
+            <CardContent className="pt-4">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Total tous médias</span>
+                <span className="text-2xl font-bold text-primary">
+                  {formatLongDuration(totalTimeMinutes)}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 gap-3">
+            <Card>
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Book className="h-4 w-4 text-primary" />
+                    <span className="font-medium">Lecture</span>
+                  </div>
+                  <span className="text-lg font-semibold">
+                    {formatLongDuration(bookReadingMinutes)}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {pagesRead.toLocaleString()} pages × 2 min/page
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Film className="h-4 w-4 text-primary" />
+                    <span className="font-medium">Films</span>
+                  </div>
+                  <span className="text-lg font-semibold">
+                    {formatLongDuration(movieWatchMinutes)}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {moviesWatched} films vus
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Tv className="h-4 w-4 text-primary" />
+                    <span className="font-medium">Séries</span>
+                  </div>
+                  <span className="text-lg font-semibold">
+                    {formatLongDuration(showWatchMinutes)}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {episodesWatched} épisodes vus
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
 
         {/* Goals Progress */}
         <section className="mb-6">

@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { sortBooks, sortOptions, type SortOption } from "@/lib/utils/sorting"
+import { genreOptions, filterByGenre } from "@/lib/constants/genres"
 import { useBooks } from "@/lib/hooks"
 import type { BookStatus } from "@/types"
 
@@ -25,6 +26,7 @@ const statusFilters: { value: BookStatus | "all"; label: string }[] = [
 export default function BooksPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<BookStatus | "all">("all")
+  const [genreFilter, setGenreFilter] = useState<string>("")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [sortBy, setSortBy] = useState<SortOption>("in_progress")
 
@@ -40,8 +42,9 @@ export default function BooksPage() {
         statusFilter === "all" || book.status === statusFilter
       return matchesSearch && matchesStatus
     })
-    return sortBooks(filtered, sortBy)
-  }, [books, searchQuery, statusFilter, sortBy])
+    const withGenreFilter = filterByGenre(filtered, genreFilter)
+    return sortBooks(withGenreFilter, sortBy)
+  }, [books, searchQuery, statusFilter, genreFilter, sortBy])
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -94,24 +97,37 @@ export default function BooksPage() {
             ))}
           </div>
 
-          {/* Sort and view toggle */}
+          {/* Genre filter and sort */}
+          <div className="flex items-center gap-2 mb-2">
+            <select
+              value={genreFilter}
+              onChange={(e) => setGenreFilter(e.target.value)}
+              className="flex-1 text-sm border rounded-md px-2 py-1.5 bg-background"
+            >
+              {genreOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortOption)}
+              className="text-sm border rounded-md px-2 py-1.5 bg-background"
+            >
+              {sortOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Results count and view toggle */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <p className="text-sm text-muted-foreground">
-                {filteredBooks.length} résultat{filteredBooks.length > 1 ? "s" : ""}
-              </p>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="text-sm border rounded-md px-2 py-1 bg-background"
-              >
-                {sortOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <p className="text-sm text-muted-foreground">
+              {filteredBooks.length} résultat{filteredBooks.length > 1 ? "s" : ""}
+            </p>
             <div className="flex items-center gap-1">
               <Button
                 variant={viewMode === "grid" ? "secondary" : "ghost"}
@@ -167,12 +183,12 @@ export default function BooksPage() {
           <div className="text-center py-12">
             <Book className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <h3 className="font-display text-lg font-medium mb-2">
-              {searchQuery || statusFilter !== "all"
+              {searchQuery || statusFilter !== "all" || genreFilter
                 ? "Aucun livre trouvé"
                 : "Ta bibliothèque est vide"}
             </h3>
             <p className="text-muted-foreground mb-4">
-              {searchQuery || statusFilter !== "all"
+              {searchQuery || statusFilter !== "all" || genreFilter
                 ? "Essaie de modifier tes filtres"
                 : "Commence par ajouter des livres à ta collection"}
             </p>

@@ -4,8 +4,8 @@
 
 ## Statut actuel
 
-**Phase :** Phase 16 - Wishlist et filtres par genre (TERMINÉE)
-**Dernière mise à jour :** 2025-12-16 (session 11 - wishlist + filtres genre)
+**Phase :** Phase 17 - Filtres combinés, stats temps et mode surprise (TERMINÉE)
+**Dernière mise à jour :** 2025-12-16 (session 12 - filtres combinés + temps + surprise)
 **Build :** OK
 **Déployé :** https://myshelf-d69.pages.dev
 **État DB prod :** Vraies données avec descriptions en français (10 livres, 10 films, 10 séries)
@@ -196,6 +196,19 @@
 - [x] **Fix statut recherche** : API search vérifie maintenant `in_library` et `in_wishlist` via DB
 - [x] **Fix modal state** : Reset du state quand on change d'item + callback pour sync parent
 
+### Phase 17 : Filtres combinés, stats temps et mode surprise - TERMINÉE
+- [x] **Filtres combinés bibliothèque** : Genre + statut sur `/books`, `/movies`, `/shows`
+- [x] **Fichier utilitaire genres** : `src/lib/constants/genres.ts` avec options et fonction de filtrage
+- [x] **Temps total visionnage** : Nouvelle section "Temps total" sur `/stats`
+- [x] **Temps lecture estimé** : Pages × 2 min/page (configurable via `READING_MINUTES_PER_PAGE`)
+- [x] **Temps films réel** : Somme des `runtime` depuis TMDB
+- [x] **Temps séries réel** : Épisodes vus × durée (via `watched_episodes` et `show_seasons`)
+- [x] **Fonctions formatage** : `formatDuration()` et `formatLongDuration()` dans `lib/utils.ts`
+- [x] **Mode surprise** : Card "Surprise" sur `/recommendations` avec bouton Go
+- [x] **API surprise** : `/api/recommendations/surprise` (GET) - 1 livre + 1 film + 1 série
+- [x] **Gemini surprise** : Prompt spécial pour classiques modernes (2010+), bien notés, basés sur goûts
+- [x] **Message IA surprise** : Affichage du message enthousiaste de Gemini avant les 3 recos
+
 ---
 
 ## Migrations D1
@@ -231,6 +244,7 @@
 | `/api/goals` | GET, POST | Objectifs annuels |
 | `/api/highlights` | GET, POST, PATCH, DELETE | Passages favoris |
 | `/api/recommendations/ask` | POST | Recommandations IA (Gemini 2.5 Flash) |
+| `/api/recommendations/surprise` | GET | Mode surprise (1 livre + 1 film + 1 série classiques) |
 | `/api/subscriptions` | GET, POST | Abonnements streaming |
 | `/api/episodes` | GET, POST, DELETE | Tracking épisodes séries (style TV Time) |
 | `/api/dismissed` | GET, POST, DELETE | Médias refusés dans recommandations IA |
@@ -309,17 +323,17 @@ src/
 
 > Voir **NEXT_SESSION.md** pour les idées détaillées de la prochaine session.
 
-**Prioritaires :**
-- Liste "Mes envies" (wishlist sans ajout à la biblio)
-- Filtre par genre (recherche et recos IA)
-- Export bibliothèque (CSV/JSON)
+**À faire (Priorité 3 restante) :**
+- Graphique évolution/mois (recharts ou chart.js)
+- Vue calendrier lectures/visionnages
 
-**Optionnelles :**
+**Optionnelles (Priorité 4) :**
+- Recherche par tropes (livres)
+- Filtre note minimum
+- Export bibliothèque (CSV/JSON)
 - Service worker avancé pour mode offline complet
 - Import BookNode / TV Time
 - Embeddings Vectorize pour recommandations sémantiques
-- Badges streaming sur résultats de recherche
-- Tests E2E avec Playwright
 
 ---
 

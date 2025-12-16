@@ -22,12 +22,14 @@ export async function GET() {
         toRead: 0,
         pagesRead: 0,
         avgRating: null,
+        totalReadingMinutes: 0,
       },
       movies: {
         total: 0,
         watched: 0,
         toWatch: 0,
         avgRating: null,
+        totalWatchMinutes: 0,
       },
       shows: {
         total: 0,
@@ -35,6 +37,8 @@ export async function GET() {
         watching: 0,
         toWatch: 0,
         avgRating: null,
+        totalWatchMinutes: 0,
+        episodesWatched: 0,
       },
       currentYear: {
         booksRead: 0,
@@ -42,6 +46,7 @@ export async function GET() {
         showsWatched: 0,
       },
       goals: null,
+      totalTimeMinutes: 0,
     })
   }
 }
