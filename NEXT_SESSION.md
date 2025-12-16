@@ -1,16 +1,29 @@
 # Prochaine session - Idées d'implémentation
 
-## Dernière session (2025-12-16)
+## Dernière session (2025-12-17)
 
 **Fait :**
-- **Prochaines sorties** : Nouvelle page `/upcoming` avec liste des prochains épisodes
-- **API upcoming** : `/api/upcoming` qui récupère les `next_episode_to_air` depuis TMDB
-- **Migration DB** : Nouvelles colonnes `next_episode_air_date`, `next_episode_season`, etc. dans `shows`
-- **Section dashboard** : Aperçu des 3 prochaines sorties sur la page d'accueil
-- **Rafraîchissement intelligent** : Les données sont mises à jour progressivement
-- **UI colorée** : Bordure verte pour "aujourd'hui", orange pour "dans 3 jours"
 
-**Session précédente :**
+### Fonctionnalité "Prochaines sorties"
+- **Page `/upcoming`** : Liste des prochains épisodes groupés par mois
+- **API `/api/upcoming`** : GET (liste) et POST (refresh) des prochaines sorties TMDB
+- **Migration DB 012** : Colonnes `next_episode_air_date`, `next_episode_season`, `next_episode_number`, `next_episode_name`, `upcoming_updated_at`
+- **Section dashboard** : Aperçu des 3 prochaines sorties sur la page d'accueil
+- **UI colorée** : Bordure verte (aujourd'hui), orange (dans 3 jours)
+- **Rafraîchissement intelligent** : Max 5 séries par requête pour éviter timeout
+
+### Migration OpenNext (Infrastructure majeure)
+- **Problème résolu** : Bundle `@cloudflare/next-on-pages` dépassait 3 MiB (limite free tier)
+- **Nouveau package** : `@opennextjs/cloudflare` (meilleur code splitting)
+- **Migration imports** : `getRequestContext` → `getCloudflareContext` (17 fichiers API)
+- **Suppression runtime** : Plus besoin de `export const runtime = "edge"` (20 fichiers)
+- **Nouvelle config** : `wrangler.jsonc` (remplace `.toml`) + `open-next.config.ts`
+- **GitHub Actions** : Nouveau workflow de déploiement automatique
+- **Secrets configurés** : TMDB_API_KEY, GEMINI_API_KEY, HARDCOVER_API_KEY, GOOGLE_BOOKS_API_KEY
+- **Fix images** : Ajout domaines Google Books dans `remotePatterns`
+- **Nouvelle URL** : https://myshelf.emericb59.workers.dev
+
+**Session précédente (2025-12-16) :**
 - Graphiques d'évolution : Nouvelle page `/stats/charts` avec recharts
 - API charts : `/api/stats/charts` avec paramètres période, granularité
 - Toggle graphique : Basculer entre barres et lignes

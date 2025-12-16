@@ -4,10 +4,10 @@
 
 ## Statut actuel
 
-**Phase :** Phase 18 - Graphiques d'évolution (TERMINÉE)
-**Dernière mise à jour :** 2025-12-16 (session 13 - graphiques évolution temporelle)
+**Phase :** Phase 19 - Migration OpenNext (TERMINÉE)
+**Dernière mise à jour :** 2025-12-17 (session 14 - migration OpenNext + upcoming releases)
 **Build :** OK
-**Déployé :** https://myshelf-d69.pages.dev
+**Déployé :** https://myshelf.emericb59.workers.dev (Cloudflare Workers via OpenNext)
 **État DB prod :** Vraies données avec descriptions en français (10 livres, 10 films, 10 séries)
 
 ---
@@ -223,6 +223,33 @@
 - [x] **Résumé période** : Cards avec totaux de la période sélectionnée
 - [x] **Lien depuis /stats** : Card "Graphiques" ajoutée à la page stats principale
 
+### Phase 19 : Prochaines sorties + Migration OpenNext - TERMINÉE
+
+#### 19.1 Fonctionnalité "Prochaines sorties" (Séries TV)
+- [x] **Migration DB 012** : Colonnes `next_episode_air_date`, `next_episode_season`, `next_episode_number`, `next_episode_name`, `upcoming_updated_at`
+- [x] **API /api/upcoming** : GET (liste) et POST (refresh) des prochaines sorties
+- [x] **Types TMDB** : `TMDBNextEpisode` et `next_episode_to_air` dans `TMDBShow`
+- [x] **DB helpers** : `getShowsWithUpcomingEpisodes`, `getShowsNeedingRefresh`, `updateShowNextEpisode`, `getActiveShows`
+- [x] **Page /upcoming** : Liste des prochains épisodes groupés par mois
+- [x] **Section dashboard** : Aperçu des 3 prochaines sorties sur la page d'accueil
+- [x] **UI colorée** : Bordure verte (aujourd'hui), orange (dans 3 jours)
+- [x] **Rafraîchissement intelligent** : Max 5 séries par requête pour éviter timeout
+
+#### 19.2 Migration OpenNext (Infrastructure)
+- [x] **Problème initial** : Bundle `@cloudflare/next-on-pages` > 3 MiB (limite free tier)
+- [x] **Suppression package** : `@cloudflare/next-on-pages` désinstallé
+- [x] **Installation package** : `@opennextjs/cloudflare` installé
+- [x] **Configuration wrangler** : `wrangler.toml` → `wrangler.jsonc`
+- [x] **Configuration OpenNext** : Nouveau fichier `open-next.config.ts`
+- [x] **Configuration Next.js** : Ajout `initOpenNextCloudflareForDev()` dans `next.config.ts`
+- [x] **Migration imports** : `getRequestContext` → `getCloudflareContext` (17 fichiers API)
+- [x] **Suppression runtime** : `export const runtime = "edge"` retiré (20 fichiers)
+- [x] **GitHub Actions** : Nouveau workflow `.github/workflows/deploy.yml`
+- [x] **Secrets Cloudflare** : TMDB_API_KEY, GEMINI_API_KEY, HARDCOVER_API_KEY, GOOGLE_BOOKS_API_KEY
+- [x] **Secrets GitHub** : CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
+- [x] **Fix images** : Ajout domaines Google Books dans `remotePatterns`
+- [x] **Nouvelle URL** : https://myshelf.emericb59.workers.dev
+
 ---
 
 ## Migrations D1
@@ -240,6 +267,7 @@
 | `009_dismissed_media.sql` | Table `dismissed_media` pour refus de suggestions IA | ✅ |
 | `010_wishlist.sql` | Table `wishlist` pour liste d'envies | ✅ |
 | `011_add_episode_runtime.sql` | Colonne `runtime` dans `watched_episodes` pour temps réel par épisode | ✅ |
+| `012_upcoming_releases.sql` | Colonnes `next_episode_*` et `upcoming_updated_at` dans `shows` | ✅ |
 
 > **Note :** La DB contient des données réelles avec descriptions en français, IDs vérifiés via APIs officielles (Open Library + TMDB).
 
@@ -265,6 +293,7 @@
 | `/api/episodes` | GET, POST, DELETE | Tracking épisodes séries (style TV Time) |
 | `/api/dismissed` | GET, POST, DELETE | Médias refusés dans recommandations IA |
 | `/api/wishlist` | GET, POST, DELETE | Liste d'envies (médias à découvrir plus tard) |
+| `/api/upcoming` | GET, POST | Prochaines sorties séries TV (refresh TMDB) |
 
 ---
 
@@ -303,6 +332,7 @@ src/
 │   ├── recommendations/
 │   │   ├── page.tsx                # Recommandations par mood
 │   │   └── ask/page.tsx            # Chat IA
+│   ├── upcoming/page.tsx          # Prochaines sorties séries
 │   ├── stats/
 │   │   ├── page.tsx                # Statistiques
 │   │   ├── charts/page.tsx         # Graphiques d'évolution
@@ -332,6 +362,12 @@ src/
 ├── types/
 │   └── index.ts
 └── env.d.ts
+
+# Fichiers config racine
+├── .github/workflows/deploy.yml  # CI/CD GitHub Actions
+├── wrangler.jsonc                # Config Cloudflare Workers
+├── open-next.config.ts           # Config OpenNext
+└── next.config.ts                # Config Next.js
 ```
 
 ---
@@ -355,14 +391,18 @@ src/
 
 ## Notes techniques IMPORTANTES
 
-### Règles Cloudflare Pages
+### Règles Cloudflare Workers / OpenNext
 
-1. **Edge Runtime obligatoire** : Toutes les pages dynamiques (`[id]`) ET API routes :
+1. **Edge Runtime NON requis** : Avec OpenNext, plus besoin de `export const runtime = 'edge'`
+
+2. **Accès D1** : Utiliser `getCloudflareContext()` de `@opennextjs/cloudflare`
    ```typescript
-   export const runtime = 'edge'
+   import { getCloudflareContext } from "@opennextjs/cloudflare"
+   const { env } = getCloudflareContext()
+   const db = env.DB
    ```
 
-2. **Accès D1** : Utiliser `getRequestContext()` de `@cloudflare/next-on-pages`
+3. **Déploiement** : Via GitHub Actions (push sur `main`), pas localement sur Windows
 
 ### TypeScript strict
 
@@ -391,11 +431,11 @@ src/
 ## Comment tester
 
 ```bash
-# Dev local
+# Dev local (avec bindings D1 simulés via OpenNext)
 npm run dev
 
-# Dev avec D1 local
-npx wrangler pages dev .next --d1=DB=myshelf-db
+# Preview OpenNext complet (build + preview local)
+npm run preview
 
 # Tests unitaires
 npm test              # Mode watch
@@ -429,18 +469,25 @@ GOOGLE_BOOKS_API_KEY=xxx
 HARDCOVER_API_KEY=xxx
 ```
 
-### Production (Cloudflare Dashboard)
+### Production (Cloudflare Workers secrets)
+
+Configurés via `npx wrangler secret put <NOM>` :
 - TMDB_API_KEY
 - GEMINI_API_KEY
 - GOOGLE_BOOKS_API_KEY
 - HARDCOVER_API_KEY
+
+### GitHub Actions secrets
+- CLOUDFLARE_API_TOKEN (pour wrangler deploy)
+- CLOUDFLARE_ACCOUNT_ID
 
 ---
 
 ## Informations Cloudflare
 
 - **D1 Database ID** : `2bf81530-3003-4748-958a-111383c35183`
-- **Pages URL** : https://myshelf-d69.pages.dev
+- **Workers URL** : https://myshelf.emericb59.workers.dev
+- **Ancienne Pages URL** : https://myshelf-d69.pages.dev (obsolète depuis migration OpenNext)
 - **GitHub Repo** : https://github.com/Emeric59/myshelf
 
 ---
@@ -477,6 +524,9 @@ HARDCOVER_API_KEY=xxx
 28. **Statut recherche manquant** : API search ne vérifiait pas `in_library`/`in_wishlist` - ajout batch check DB
 29. **Modal wishlist state** : State `savedToWishlist` ne se réinitialisait pas entre items - ajout useEffect + callback
 30. **Progression/note livres** : API PATCH `/api/books` ne gérait que `status`, ignorait `current_page` et `rating`
+31. **Bundle trop gros** : `@cloudflare/next-on-pages` dépassait 3 MiB - migré vers `@opennextjs/cloudflare`
+32. **Images Google Books** : Domaines `books.google.com` et `*.googleusercontent.com` manquants dans `remotePatterns`
+33. **Déploiement Windows** : `npm run deploy` échoue sur Windows - utiliser GitHub Actions
 
 ---
 
