@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Github,
   ExternalLink,
+  Ban,
 } from "lucide-react"
 import { Header, PageHeader } from "@/components/layout"
 import { BottomNav } from "@/components/layout"
@@ -33,6 +34,12 @@ const settingsSections = [
         icon: Tv,
         label: "Abonnements",
         description: "Streaming et lecture",
+      },
+      {
+        href: "/settings/dismissed",
+        icon: Ban,
+        label: "Suggestions refusées",
+        description: "Médias exclus des recommandations",
       },
     ],
   },

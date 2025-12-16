@@ -4,8 +4,8 @@
 
 ## Statut actuel
 
-**Phase :** Phase 12 - Filtres et UX (TERMINÉE)
-**Dernière mise à jour :** 2025-12-16 (session 7 - filtres année, dismiss suggestions, tri bibliothèque)
+**Phase :** Phase 13 - Gestion des suggestions refusées (TERMINÉE)
+**Dernière mise à jour :** 2025-12-16 (session 8 - page dismissed, flow "déjà vu/lu" amélioré)
 **Build :** OK
 **Déployé :** https://myshelf-d69.pages.dev
 **État DB prod :** Vraies données avec descriptions en français (10 livres, 10 films, 10 séries)
@@ -154,6 +154,14 @@
 - [x] **Options de tri** : En cours d'abord, Récent, Note
 - [x] **Utilitaire sorting** : `src/lib/utils/sorting.ts` avec priorités par statut
 
+### Phase 13 : Gestion des suggestions refusées - TERMINÉE
+- [x] **Page /settings/dismissed** : Liste des médias refusés avec possibilité de retirer
+- [x] **Affichage détaillé** : Type de média, raison du refus, date, détail optionnel
+- [x] **Suppression avec confirmation** : Dialog pour confirmer le retrait de la liste
+- [x] **Flow "Déjà vu/lu" amélioré** : Propose d'ajouter à la bibliothèque au lieu de juste dismiss
+- [x] **Ajout avec statut complété** : Médias ajoutés via ce flow ont le statut "lu"/"vu"
+- [x] **Lien dans paramètres** : Accès depuis /settings > Préférences > Suggestions refusées
+
 ---
 
 ## Migrations D1
@@ -266,8 +274,9 @@ src/
 > Voir **NEXT_SESSION.md** pour les idées détaillées de la prochaine session.
 
 **Prioritaires :**
-- Exploiter les raisons de refus (patterns pour améliorer les recos)
-- Page `/settings/dismissed` pour gérer les médias refusés
+- Images livres dans les recos IA + clic pour voir la fiche
+- Corriger l'affichage du synopsis (avant la note)
+- Filtres avancés (genre, note minimum, tropes)
 
 **Optionnelles :**
 - Service worker avancé pour mode offline complet

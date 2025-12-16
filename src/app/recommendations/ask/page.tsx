@@ -52,6 +52,7 @@ export default function AskPage() {
     reco: RecommendationItem
   } | null>(null)
   const [isDismissing, setIsDismissing] = useState(false)
+  const [isAddingFromDismiss, setIsAddingFromDismiss] = useState(false)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -238,6 +239,60 @@ export default function AskPage() {
     }
   }
 
+  // Handle "already consumed" -> add to library with completed status
+  const handleAddFromDismiss = async () => {
+    if (!selectedForDismiss) return
+
+    const { messageId, reco } = selectedForDismiss
+    setIsAddingFromDismiss(true)
+
+    try {
+      // Search for the media first
+      const searchResponse = await fetch(
+        `/api/search?q=${encodeURIComponent(reco.title)}&type=${reco.type}`
+      )
+      const searchData = await searchResponse.json() as { results?: Array<{ id: string; title: string }> }
+
+      if (!searchData.results || searchData.results.length === 0) {
+        throw new Error('Media not found')
+      }
+
+      // Get the first match
+      const media = searchData.results[0]
+
+      // Add to library with "completed" status (read/watched)
+      const endpoint = reco.type === 'book' ? '/api/books' : reco.type === 'movie' ? '/api/movies' : '/api/shows'
+      const status = reco.type === 'book' ? 'read' : 'watched'
+
+      await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: media.id, status }),
+      })
+
+      // Mark as added in UI (instead of removing)
+      setMessages(prev => prev.map(msg => {
+        if (msg.id === messageId && msg.recommendations) {
+          return {
+            ...msg,
+            recommendations: msg.recommendations.map(r =>
+              r.id === reco.id ? { ...r, added: true } : r
+            )
+          }
+        }
+        return msg
+      }))
+
+      setDismissDialogOpen(false)
+      setSelectedForDismiss(null)
+    } catch (error) {
+      console.error('Error adding to library:', error)
+      alert('Impossible de trouver ce média. Essaie de le chercher manuellement.')
+    } finally {
+      setIsAddingFromDismiss(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
@@ -415,7 +470,9 @@ export default function AskPage() {
         title={selectedForDismiss?.reco.title || ""}
         mediaType={selectedForDismiss?.reco.type || "book"}
         onDismiss={handleDismiss}
+        onAddToLibrary={handleAddFromDismiss}
         isLoading={isDismissing}
+        isAddingToLibrary={isAddingFromDismiss}
       />
     </div>
   )

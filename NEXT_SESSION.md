@@ -1,44 +1,43 @@
 # Prochaine session - Idées d'implémentation
 
-## Amélioration du système de dismiss
+## Recommandations IA
 
-### Exploiter les raisons de refus
-Actuellement stockées mais non utilisées (`reason` dans `dismissed_media`).
+### Images et navigation
+- Ajouter image livre dans les recos de l'IA
+- Ajouter la possibilité de cliquer sur une reco de l'IA pour avoir la fiche du livre/film/série, comme déjà utilisé dans la recherche
+- Mode "surprise" - reco aléatoire basée sur les goûts
 
-**Idées :**
-- Si "déjà vu/lu" → proposer d'ajouter à la bibliothèque au lieu de dismiss
-- Analyser les patterns de refus pour affiner les recommandations :
-  - Beaucoup de "pas intéressé" sur un genre → réduire ce genre dans les recos
-  - Ajouter les raisons au contexte Gemini pour qu'il apprenne
-- Page `/settings/dismissed` pour voir/gérer les médias refusés
-
-### Simplification alternative
-Si les raisons ne sont pas utiles → simplifier en dismiss direct (1 clic + confirmation simple sans choix de raison).
+### Liste "Mes envies"
+- Sauvegarder une recommandation pour plus tard (sans l'ajouter à la bibliothèque)
+- Nouveau statut ou nouvelle table dédiée
 
 ---
 
-## Autres idées
+## Recherche avancée
 
-### Recherche avancée
 - Filtrer par genre en plus de l'année
 - Filtrer par note minimum (TMDB/utilisateur)
 - Recherche par tropes pour les livres
 
-### Bibliothèque
+---
+
+## Bibliothèque
+
+- Corriger l'affichage du synopsis et l'avancer avant la possibilité de noter le livre/film/série
 - Filtres combinés (genre + statut)
 - Vue calendrier des lectures/visionnages
 - Export de la bibliothèque (CSV, JSON)
 
-### Recommandations IA
-- Historique des conversations avec l'IA
-- Sauvegarder une recommandation pour plus tard (sans l'ajouter à la bibliothèque)
-- Mode "surprise" - reco aléatoire basée sur les goûts
+---
 
-### Stats
+## Stats
+
 - Graphique d'évolution des lectures/visionnages par mois
 - Temps total passé à regarder des séries/films
-- Streak de lecture (jours consécutifs)
 
-### Social (optionnel, single-user mais...)
+---
+
+## Social (optionnel, single-user mais...)
+
 - Partager une recommandation
 - Générer une image "Currently reading/watching" pour les réseaux sociaux
