@@ -22,6 +22,16 @@ const nextConfig: NextConfig = {
         hostname: "hardcover.app",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "books.google.com",
+        pathname: "/books/**",
+      },
+      {
+        protocol: "https",
+        hostname: "*.googleusercontent.com",
+        pathname: "/**",
+      },
     ],
   },
 };
