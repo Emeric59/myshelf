@@ -193,6 +193,8 @@
 - [x] **Filtre par genre - Chat IA** : Inclus dans le prompt IA
 - [x] **Wishlist depuis recherche** : Bouton cœur sur MediaCard (variant search)
 - [x] **Wishlist depuis modal recherche** : Bouton "Mes envies" sur SearchDetailModal
+- [x] **Fix statut recherche** : API search vérifie maintenant `in_library` et `in_wishlist` via DB
+- [x] **Fix modal state** : Reset du state quand on change d'item + callback pour sync parent
 
 ---
 
@@ -209,7 +211,7 @@
 | `007_add_book_enrichment.sql` | Colonnes enrichissement livres (tropes, moods, hardcover_slug, etc.) | ✅ |
 | `008_episode_tracking.sql` | Tables `show_seasons` et `watched_episodes` pour tracking épisodes | ✅ |
 | `009_dismissed_media.sql` | Table `dismissed_media` pour refus de suggestions IA | ✅ |
-| `010_wishlist.sql` | Table `wishlist` pour liste d'envies | À appliquer |
+| `010_wishlist.sql` | Table `wishlist` pour liste d'envies | ✅ |
 
 > **Note :** La DB contient des données réelles avec descriptions en français, IDs vérifiés via APIs officielles (Open Library + TMDB).
 
@@ -442,6 +444,8 @@ HARDCOVER_API_KEY=xxx
 25. **Synopsis manquant** : Ajout de `description` et `pageCount` au payload d'ajout livre
 26. **Enrichissement pollué** : Fallback aveugle `results[0]` remplacé par fuzzy match avec seuil 60%
 27. **Debounce trop court** : 500ms → 700ms pour éviter requêtes intermédiaires
+28. **Statut recherche manquant** : API search ne vérifiait pas `in_library`/`in_wishlist` - ajout batch check DB
+29. **Modal wishlist state** : State `savedToWishlist` ne se réinitialisait pas entre items - ajout useEffect + callback
 
 ---
 

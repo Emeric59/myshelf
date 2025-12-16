@@ -11,10 +11,17 @@
 - Auto-mark tous les épisodes vus quand série = "Terminée"
 - Nouveau composant `RecommendationCard` pour les recos IA
 - Fonction utilitaire `stripHtml()` dans `lib/utils.ts`
-- **Images dans suggestions par mood** : Refactorisé `/recommendations` pour utiliser `RecommendationCard` (images auto, modal détail, dismiss)
-- **Liste "Mes envies"** : Table DB, API, page complète avec filtres
+- **Images dans suggestions par mood** : Refactorisé `/recommendations` pour utiliser `RecommendationCard`
+- **Liste "Mes envies"** : Table DB `wishlist`, API `/api/wishlist`, page `/wishlist`
 - **Bouton wishlist sur recherche** : Cœur sur chaque MediaCard + bouton "Mes envies" dans le modal
 - **Filtre par genre** : Recherche, recos mood, chat IA
+- **Fix statut recherche** : API `/api/search` vérifie maintenant `in_library` et `in_wishlist` via DB
+- **Fix modal state** : Reset du state quand on change d'item + callback `onWishlistAdd` pour sync parent
+
+**Bugs corrigés :**
+- Items déjà dans bibliothèque/wishlist maintenant correctement marqués dans les résultats de recherche
+- Modal ne montre plus "Sauvegardé" pour tous les items (state reset avec useEffect)
+- Sauvegarder depuis modal met à jour la carte en dessous (callback vers parent)
 
 ---
 
