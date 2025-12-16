@@ -22,6 +22,7 @@
 - Items déjà dans bibliothèque/wishlist maintenant correctement marqués dans les résultats de recherche
 - Modal ne montre plus "Sauvegardé" pour tous les items (state reset avec useEffect)
 - Sauvegarder depuis modal met à jour la carte en dessous (callback vers parent)
+- Progression et note des livres ne se sauvegardaient pas (API PATCH ne gérait que le status)
 
 ---
 

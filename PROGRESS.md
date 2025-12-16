@@ -446,6 +446,7 @@ HARDCOVER_API_KEY=xxx
 27. **Debounce trop court** : 500ms → 700ms pour éviter requêtes intermédiaires
 28. **Statut recherche manquant** : API search ne vérifiait pas `in_library`/`in_wishlist` - ajout batch check DB
 29. **Modal wishlist state** : State `savedToWishlist` ne se réinitialisait pas entre items - ajout useEffect + callback
+30. **Progression/note livres** : API PATCH `/api/books` ne gérait que `status`, ignorait `current_page` et `rating`
 
 ---
 
