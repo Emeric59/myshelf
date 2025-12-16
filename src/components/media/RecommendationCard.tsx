@@ -140,9 +140,15 @@ export function RecommendationCard({
         // Already in wishlist
         setSavedToWishlist(true)
         setModalOpen(false)
+      } else {
+        // Log error for debugging
+        const errorData = await res.json().catch(() => ({}))
+        console.error("Wishlist API error:", res.status, errorData)
+        alert("Erreur lors de la sauvegarde. La fonctionnalité est peut-être en cours de déploiement.")
       }
     } catch (error) {
       console.error("Error saving to wishlist:", error)
+      alert("Erreur de connexion. Réessaie plus tard.")
     } finally {
       setIsSavingWishlist(false)
     }
@@ -310,7 +316,8 @@ export function RecommendationCard({
                       {displaySubtitle}
                     </p>
                   )}
-                  {enrichedData?.year && (
+                  {/* Only show year if subtitle doesn't already contain it (for movies/shows) */}
+                  {enrichedData?.year && displaySubtitle !== String(enrichedData.year) && (
                     <p className="text-sm text-muted-foreground mt-1">
                       {enrichedData.year}
                     </p>
