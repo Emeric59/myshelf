@@ -115,6 +115,65 @@
   - Livres : Intégrer Hardcover API pour les prochains tomes de séries
   - Films : Vérifier les collections TMDB pour les suites annoncées
 
+### 3.7 Mise à jour automatique des nouvelles saisons (À FAIRE)
+- [ ] Synchronisation automatique quand une nouvelle saison sort
+
+**Problème actuel :**
+Quand une série dans la bibliothèque reçoit une nouvelle saison sur TMDB :
+- La série reste affichée comme "100% vue" alors qu'une nouvelle saison existe
+- Les nouvelles saisons/épisodes ne sont pas ajoutés à la fiche
+- L'utilisateur doit manuellement "resynchroniser" la série
+
+**Comportement attendu :**
+1. **Détection** : Vérifier périodiquement si `seasons_count` ou `episodes_count` a changé sur TMDB
+2. **Mise à jour des métadonnées** :
+   - Récupérer les nouvelles saisons depuis TMDB (`/tv/{id}`)
+   - Insérer les nouveaux épisodes dans `show_seasons`
+   - Mettre à jour `total_seasons` et `total_episodes` dans `shows`
+3. **Recalcul de la progression** :
+   - La progression passe de 100% à X% (épisodes vus / nouveau total)
+   - Le statut peut repasser de "Terminée" à "En cours" si nouvelle saison
+4. **Préserver les données utilisateur** :
+   - Note (rating) : CONSERVER
+   - Avis (review) : CONSERVER
+   - Épisodes cochés (watched_episodes) : CONSERVER
+   - Statut : RECALCULER (si était "Terminée" et nouvelle saison → "En cours")
+
+**Implémentation suggérée :**
+
+```
+Option A : Refresh lors de la visite de la fiche
+- Quand on ouvre /shows/[id], comparer seasons_count DB vs TMDB
+- Si différent → proposer un bouton "Mettre à jour" ou auto-refresh
+- Avantage : Simple, pas de job background
+- Inconvénient : L'utilisateur doit visiter la fiche
+
+Option B : Job périodique via /api/upcoming
+- Profiter du refresh des "prochaines sorties" pour vérifier les nouvelles saisons
+- Si next_episode_to_air est null ET dernière vérif > 7 jours → check TMDB
+- Avantage : Automatique
+- Inconvénient : Plus complexe, risque de rate limit TMDB
+
+Option C : Bouton "Sync bibliothèque" manuel
+- Bouton dans /settings ou /shows pour forcer la synchro de toutes les séries
+- Avantage : Contrôle utilisateur, pas de surprises
+- Inconvénient : Manuel
+```
+
+**Données à stocker (nouvelle colonne possible) :**
+- `shows.tmdb_seasons_count` : Nombre de saisons selon TMDB (pour détecter les changements)
+- `shows.last_tmdb_sync` : Date du dernier refresh TMDB complet
+
+**API concernées :**
+- `GET /api/shows?id=xxx` : Ajouter logique de détection de changement
+- Nouvelle route `POST /api/shows/sync` : Forcer la synchronisation d'une série
+- Ou intégrer dans `/api/upcoming` existant
+
+**UI :**
+- Badge "Nouvelle saison disponible" sur la card de la série
+- Notification sur le dashboard si des séries ont de nouvelles saisons
+- Bouton "Synchroniser" sur la fiche série
+
 ---
 
 ## Priorité 4 - Optionnel
