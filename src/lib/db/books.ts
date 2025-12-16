@@ -180,6 +180,24 @@ export async function updateBookProgress(
     .run()
 }
 
+// Mettre à jour la note d'un livre
+export async function updateBookRating(
+  db: D1Database,
+  bookId: string,
+  rating: number
+): Promise<void> {
+  const now = new Date().toISOString()
+
+  await db
+    .prepare(`
+      UPDATE user_books
+      SET rating = ?, updated_at = ?
+      WHERE book_id = ?
+    `)
+    .bind(rating, now, bookId)
+    .run()
+}
+
 // Supprimer un livre de la bibliothèque
 export async function removeBookFromLibrary(
   db: D1Database,

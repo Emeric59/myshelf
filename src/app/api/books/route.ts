@@ -15,6 +15,8 @@ import {
   cacheBook,
   addBookToLibrary,
   updateBookStatus,
+  updateBookProgress,
+  updateBookRating,
   removeBookFromLibrary,
   countBooksByStatus,
 } from "@/lib/db"
@@ -247,26 +249,46 @@ async function fetchBookDetails(id: string): Promise<Book> {
   }
 }
 
-// PATCH /api/books - Update book status
+// PATCH /api/books - Update book (status, progress, or rating)
 export async function PATCH(request: NextRequest) {
   try {
     const { env } = getRequestContext()
     const body = await request.json()
-    const { id, status } = body as { id: string; status: BookStatus }
+    const { id, status, current_page, rating } = body as {
+      id: string
+      status?: BookStatus
+      current_page?: number
+      rating?: number
+    }
 
-    if (!id || !status) {
+    if (!id) {
       return NextResponse.json(
-        { error: "Book ID and status are required" },
+        { error: "Book ID is required" },
         { status: 400 }
       )
     }
 
-    await updateBookStatus(env.DB, id, status)
+    // Update status if provided
+    if (status !== undefined) {
+      await updateBookStatus(env.DB, id, status)
+    }
+
+    // Update progress if provided
+    if (current_page !== undefined) {
+      await updateBookProgress(env.DB, id, current_page)
+    }
+
+    // Update rating if provided
+    if (rating !== undefined) {
+      await updateBookRating(env.DB, id, rating)
+    }
 
     return NextResponse.json({
       success: true,
       id,
-      status,
+      ...(status !== undefined && { status }),
+      ...(current_page !== undefined && { current_page }),
+      ...(rating !== undefined && { rating }),
     })
   } catch (error) {
     console.error("Error updating book:", error)
