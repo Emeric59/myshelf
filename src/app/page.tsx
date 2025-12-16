@@ -198,7 +198,7 @@ export default function Home() {
             </div>
             <div className="space-y-3">
               {currentMedia.map((media) => (
-                <Link key={`${media.type}-${media.id}`} href={`/${media.type}s/${media.id}`}>
+                <Link key={`${media.type}-${media.id}`} href={`/${media.type}s/${media.id}`} prefetch={false}>
                   <Card className="hover:border-primary transition-colors">
                     <CardContent className="p-3">
                       <div className="flex gap-3">
