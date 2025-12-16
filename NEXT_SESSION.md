@@ -12,6 +12,9 @@
 - Nouveau composant `RecommendationCard` pour les recos IA
 - Fonction utilitaire `stripHtml()` dans `lib/utils.ts`
 - **Images dans suggestions par mood** : Refactorisé `/recommendations` pour utiliser `RecommendationCard` (images auto, modal détail, dismiss)
+- **Liste "Mes envies"** : Table DB, API, page complète avec filtres
+- **Bouton wishlist sur recherche** : Cœur sur chaque MediaCard + bouton "Mes envies" dans le modal
+- **Filtre par genre** : Recherche, recos mood, chat IA
 
 ---
 

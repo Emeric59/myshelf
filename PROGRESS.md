@@ -191,6 +191,8 @@
 - [x] **Filtre par genre - Recherche** : Select avec 12 genres, filtrage côté client
 - [x] **Filtre par genre - Recos mood** : Inclus dans le prompt IA
 - [x] **Filtre par genre - Chat IA** : Inclus dans le prompt IA
+- [x] **Wishlist depuis recherche** : Bouton cœur sur MediaCard (variant search)
+- [x] **Wishlist depuis modal recherche** : Bouton "Mes envies" sur SearchDetailModal
 
 ---
 
