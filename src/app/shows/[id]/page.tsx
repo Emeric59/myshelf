@@ -249,6 +249,20 @@ export default function ShowDetailPage({ params }: { params: Promise<{ id: strin
         body: JSON.stringify({ id, status }),
       })
       setShow({ ...show, status })
+
+      // If marking as "watched", mark all episodes as watched
+      if (status === "watched" && totalSeasons > 0) {
+        for (let seasonNum = 1; seasonNum <= totalSeasons; seasonNum++) {
+          const cachedSeason = episodeProgress?.cachedSeasons?.find(s => s.season_number === seasonNum)
+          const episodeCount = cachedSeason?.episode_count || Math.ceil(totalEpisodes / totalSeasons)
+          await fetch("/api/episodes", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ showId: id, seasonNumber: seasonNum, upToEpisode: episodeCount }),
+          })
+        }
+        fetchEpisodeProgress()
+      }
     } catch (error) {
       console.error("Error updating status:", error)
     } finally {
