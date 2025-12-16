@@ -26,6 +26,9 @@
 - Modal ne montre plus "Sauvegardé" pour tous les items (state reset avec useEffect)
 - Sauvegarder depuis modal met à jour la carte en dessous (callback vers parent)
 - Progression et note des livres ne se sauvegardaient pas (API PATCH ne gérait que le status)
+- Stats temps séries : stockage du runtime par épisode (migration 011)
+- Stats temps livres : inclut maintenant les pages des livres en cours (`current_page`)
+- Message IA surprise trop long : prompt modifié pour max 15-20 mots
 
 ---
 
@@ -53,9 +56,9 @@
 
 ### 3.2 Temps total visionnage (TERMINÉ)
 - [x] Stats séries/films + temps de lecture livres
-- **Films :** Vraie durée via runtime TMDB
-- **Séries :** Durée × épisodes vus (via `watched_episodes`)
-- **Livres :** Pages × 2 min/page (TEMPORAIRE - voir QUESTIONS.md)
+- **Films :** Vraie durée via `movies.runtime` (stocké à l'ajout depuis TMDB)
+- **Séries :** Runtime stocké par épisode dans `watched_episodes.runtime` (migration 011)
+- **Livres :** Pages terminées + pages en cours (`current_page`) × 2 min/page
 - **UI :** Section "Temps total" sur `/stats` avec total global
 - **Fonctions :** `formatDuration()` et `formatLongDuration()` dans `lib/utils.ts`
 
@@ -99,3 +102,4 @@
 - [ ] Filtre note minimum (TMDB/utilisateur)
 - [ ] Partager une recommandation
 - [ ] Image "Currently reading/watching" pour réseaux sociaux
+- [ ] **Prochaines sorties** - Alertes sur les nouveaux tomes des séries de livres en cours

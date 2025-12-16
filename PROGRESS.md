@@ -225,6 +225,7 @@
 | `008_episode_tracking.sql` | Tables `show_seasons` et `watched_episodes` pour tracking épisodes | ✅ |
 | `009_dismissed_media.sql` | Table `dismissed_media` pour refus de suggestions IA | ✅ |
 | `010_wishlist.sql` | Table `wishlist` pour liste d'envies | ✅ |
+| `011_add_episode_runtime.sql` | Colonne `runtime` dans `watched_episodes` pour temps réel par épisode | ✅ |
 
 > **Note :** La DB contient des données réelles avec descriptions en français, IDs vérifiés via APIs officielles (Open Library + TMDB).
 
