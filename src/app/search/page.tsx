@@ -75,7 +75,7 @@ function SearchContent() {
       if (query.trim().length >= 2) {
         performSearch()
       }
-    }, 500)
+    }, 700)
 
     return () => clearTimeout(timer)
   }, [query, typeFilter, yearFilter, performSearch])

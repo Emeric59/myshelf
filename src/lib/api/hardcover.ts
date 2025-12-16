@@ -205,7 +205,51 @@ export async function getHardcoverBookDetails(slug: string): Promise<HardcoverBo
 }
 
 /**
- * Get book details by title and author (fuzzy match)
+ * Calculate similarity score between two strings (0 to 1)
+ * Uses longest common subsequence ratio
+ */
+function calculateSimilarity(str1: string, str2: string): number {
+  const s1 = normalizeString(str1)
+  const s2 = normalizeString(str2)
+
+  if (s1 === s2) return 1
+  if (s1.length === 0 || s2.length === 0) return 0
+
+  // Check if one contains the other
+  if (s1.includes(s2)) return s2.length / s1.length
+  if (s2.includes(s1)) return s1.length / s2.length
+
+  // Calculate Levenshtein distance for more nuanced comparison
+  const maxLen = Math.max(s1.length, s2.length)
+  const distance = levenshteinDistance(s1, s2)
+  return 1 - distance / maxLen
+}
+
+/**
+ * Levenshtein distance between two strings
+ */
+function levenshteinDistance(s1: string, s2: string): number {
+  const m = s1.length
+  const n = s2.length
+  const dp: number[][] = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0))
+
+  for (let i = 0; i <= m; i++) dp[i][0] = i
+  for (let j = 0; j <= n; j++) dp[0][j] = j
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (s1[i - 1] === s2[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1]
+      } else {
+        dp[i][j] = 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1])
+      }
+    }
+  }
+  return dp[m][n]
+}
+
+/**
+ * Get book details by title and author (fuzzy match with similarity threshold)
  */
 export async function getHardcoverBookByTitleAuthor(
   title: string,
@@ -216,11 +260,33 @@ export async function getHardcoverBookByTitleAuthor(
 
   if (results.length === 0) return null
 
-  // Find best match by title similarity
-  const normalizedTitle = normalizeString(title)
-  const bestMatch = results.find(
-    (book) => normalizeString(book.title) === normalizedTitle
-  ) || results[0]
+  // Find best match by title similarity with threshold
+  const SIMILARITY_THRESHOLD = 0.6
+  let bestMatch: HardcoverBookResult | null = null
+  let bestScore = 0
+
+  for (const book of results) {
+    const titleScore = calculateSimilarity(title, book.title)
+
+    // Bonus if author matches
+    let authorBonus = 0
+    if (author && book.authors.length > 0) {
+      const authorScore = Math.max(
+        ...book.authors.map(a => calculateSimilarity(author, a))
+      )
+      if (authorScore > 0.7) authorBonus = 0.15
+    }
+
+    const totalScore = titleScore + authorBonus
+
+    if (totalScore > bestScore && titleScore >= SIMILARITY_THRESHOLD) {
+      bestScore = totalScore
+      bestMatch = book
+    }
+  }
+
+  // No match found above threshold
+  if (!bestMatch) return null
 
   // Get full details if we have a slug
   if (bestMatch.slug) {
