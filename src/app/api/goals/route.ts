@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getRequestContext } from "@cloudflare/next-on-pages"
+import { getCloudflareContext } from "@opennextjs/cloudflare"
 import { getGoals, updateGoals } from "@/lib/db"
-
-// Runtime edge for Cloudflare
-export const runtime = "edge"
 
 // GET /api/goals - Get goals for a year
 export async function GET(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const { searchParams } = new URL(request.url)
     const yearParam = searchParams.get("year")
     const year = yearParam ? parseInt(yearParam) : new Date().getFullYear()
@@ -31,7 +28,7 @@ export async function GET(request: NextRequest) {
 // POST /api/goals - Update goals for a year
 export async function POST(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const body = await request.json()
     const { year, books, movies, shows } = body as {
       year?: number

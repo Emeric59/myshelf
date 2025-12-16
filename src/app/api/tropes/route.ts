@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getRequestContext } from "@cloudflare/next-on-pages"
+import { getCloudflareContext } from "@opennextjs/cloudflare"
 import {
   getAllTropes,
   getTropesByCategory,
@@ -11,13 +11,10 @@ import {
 } from "@/lib/db"
 import type { TropePreference } from "@/types"
 
-// Runtime edge for Cloudflare
-export const runtime = "edge"
-
 // GET /api/tropes - Get tropes and user preferences
 export async function GET(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const { searchParams } = new URL(request.url)
     const category = searchParams.get("category")
     const preferencesOnly = searchParams.get("preferences") === "true"
@@ -108,7 +105,7 @@ export async function GET(request: NextRequest) {
 // PATCH /api/tropes - Update trope preference
 export async function PATCH(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const body = await request.json()
     const { tropeId, preference } = body as {
       tropeId: number

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getRequestContext } from "@cloudflare/next-on-pages"
+import { getCloudflareContext } from "@opennextjs/cloudflare"
 import { getMovie, normalizeMovie } from "@/lib/api"
 import {
   getUserMovies,
@@ -13,13 +13,10 @@ import {
 } from "@/lib/db"
 import type { MovieStatus, Movie } from "@/types"
 
-// Runtime edge for Cloudflare
-export const runtime = "edge"
-
 // GET /api/movies - List user's movies or get single movie
 export async function GET(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const { searchParams } = new URL(request.url)
     const id = searchParams.get("id")
     const status = searchParams.get("status") as MovieStatus | null
@@ -63,7 +60,7 @@ export async function GET(request: NextRequest) {
 // POST /api/movies - Add a movie to library
 export async function POST(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const body = await request.json()
     const { id, status = "to_watch" } = body as {
       id: string
@@ -121,7 +118,7 @@ export async function POST(request: NextRequest) {
 // PATCH /api/movies - Update movie status or rating
 export async function PATCH(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const body = await request.json()
     const { id, status, rating } = body as { id: string; status?: MovieStatus; rating?: number }
 
@@ -158,7 +155,7 @@ export async function PATCH(request: NextRequest) {
 // DELETE /api/movies - Remove movie from library
 export async function DELETE(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const { searchParams } = new URL(request.url)
     const id = searchParams.get("id")
 

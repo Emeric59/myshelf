@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getRequestContext } from "@cloudflare/next-on-pages"
+import { getCloudflareContext } from "@opennextjs/cloudflare"
 import {
   getAllHighlights,
   getHighlightById,
@@ -10,13 +10,10 @@ import {
   searchHighlights,
 } from "@/lib/db"
 
-// Runtime edge for Cloudflare
-export const runtime = "edge"
-
 // GET /api/highlights - Get all highlights or filter by book
 export async function GET(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const { searchParams } = new URL(request.url)
     const bookId = searchParams.get("bookId")
     const highlightId = searchParams.get("id")
@@ -72,7 +69,7 @@ export async function GET(request: NextRequest) {
 // POST /api/highlights - Create a new highlight
 export async function POST(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const body = await request.json()
     const { bookId, content, pageNumber, chapter, personalNote } = body as {
       bookId: string
@@ -120,7 +117,7 @@ export async function POST(request: NextRequest) {
 // PATCH /api/highlights - Update a highlight
 export async function PATCH(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const body = await request.json()
     const { id, content, pageNumber, chapter, personalNote } = body as {
       id: number
@@ -174,7 +171,7 @@ export async function PATCH(request: NextRequest) {
 // DELETE /api/highlights - Delete a highlight
 export async function DELETE(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const { searchParams } = new URL(request.url)
     const id = searchParams.get("id")
 

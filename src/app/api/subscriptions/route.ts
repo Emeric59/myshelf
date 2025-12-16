@@ -4,14 +4,12 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { getRequestContext } from "@cloudflare/next-on-pages"
-
-export const runtime = "edge"
+import { getCloudflareContext } from "@opennextjs/cloudflare"
 
 // GET - Retrieve all active subscriptions
 export async function GET() {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const db = env.DB
 
     const result = await db
@@ -35,7 +33,7 @@ export async function GET() {
 // POST - Add or update subscriptions
 export async function POST(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const db = env.DB
 
     const body = await request.json() as {

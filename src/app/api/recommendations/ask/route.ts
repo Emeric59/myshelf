@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getRequestContext } from "@cloudflare/next-on-pages"
+import { getCloudflareContext } from "@opennextjs/cloudflare"
 import { getRecommendations, buildUserContext } from "@/lib/ai/gemini"
-
-// Runtime edge for Cloudflare
-export const runtime = "edge"
 
 // POST /api/recommendations/ask - Get AI recommendations
 export async function POST(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const body = await request.json()
     const { query, mediaTypes, minYear } = body as {
       query: string

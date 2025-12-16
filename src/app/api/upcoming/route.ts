@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getRequestContext } from "@cloudflare/next-on-pages"
+import { getCloudflareContext } from "@opennextjs/cloudflare"
 import { getShow } from "@/lib/api"
 import {
   getShowsWithUpcomingEpisodes,
@@ -9,9 +9,6 @@ import {
 } from "@/lib/db"
 import type { UpcomingRelease, NextEpisodeInfo } from "@/types"
 
-// Runtime edge for Cloudflare
-export const runtime = "edge"
-
 /**
  * GET /api/upcoming - Get upcoming releases
  * Query params:
@@ -19,7 +16,7 @@ export const runtime = "edge"
  */
 export async function GET(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const { searchParams } = new URL(request.url)
     const forceRefresh = searchParams.get("refresh") === "true"
 
@@ -61,7 +58,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST() {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
 
     const refreshedCount = await refreshUpcomingData(env.DB)
 

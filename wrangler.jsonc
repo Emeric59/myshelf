@@ -1,0 +1,44 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "myshelf",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2024-12-30",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Assets configuration for OpenNext
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+
+  // D1 Database binding
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "myshelf-db",
+      "database_id": "2bf81530-3003-4748-958a-111383c35183"
+    }
+  ],
+
+  // Environment variables
+  "vars": {
+    "ENVIRONMENT": "production"
+  },
+
+  // Preview environment
+  "env": {
+    "preview": {
+      "name": "myshelf-preview",
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "myshelf-db",
+          "database_id": "2bf81530-3003-4748-958a-111383c35183"
+        }
+      ],
+      "vars": {
+        "ENVIRONMENT": "preview"
+      }
+    }
+  }
+}

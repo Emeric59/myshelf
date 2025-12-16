@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getRequestContext } from "@cloudflare/next-on-pages"
+import { getCloudflareContext } from "@opennextjs/cloudflare"
 import {
   getAllWishlistItems,
   addToWishlist,
@@ -8,13 +8,10 @@ import {
 } from "@/lib/db/wishlist"
 import type { MediaType } from "@/types"
 
-// Runtime edge for Cloudflare
-export const runtime = "edge"
-
 // GET /api/wishlist - List all wishlist items
 export async function GET(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const { searchParams } = new URL(request.url)
     const mediaType = searchParams.get("type") as MediaType | null
 
@@ -35,7 +32,7 @@ export async function GET(request: NextRequest) {
 // POST /api/wishlist - Add to wishlist
 export async function POST(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const body = await request.json()
     const {
       mediaType,
@@ -97,7 +94,7 @@ export async function POST(request: NextRequest) {
 // DELETE /api/wishlist?id=X - Remove from wishlist
 export async function DELETE(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const { searchParams } = new URL(request.url)
     const id = searchParams.get("id")
 

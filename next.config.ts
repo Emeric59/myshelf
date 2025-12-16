@@ -1,9 +1,11 @@
 import type { NextConfig } from "next";
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+
+// Initialize OpenNext for local development
+initOpenNextCloudflareForDev();
 
 const nextConfig: NextConfig = {
   images: {
-    // Désactiver l'optimisation d'images (non supportée sur Cloudflare Pages)
-    unoptimized: true,
     remotePatterns: [
       {
         protocol: "https",
@@ -14,6 +16,11 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "image.tmdb.org",
         pathname: "/t/p/**",
+      },
+      {
+        protocol: "https",
+        hostname: "hardcover.app",
+        pathname: "/**",
       },
     ],
   },

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getRequestContext } from "@cloudflare/next-on-pages"
+import { getCloudflareContext } from "@opennextjs/cloudflare"
 import {
   searchBooksMultiSource,
   searchMovies,
@@ -13,9 +13,6 @@ import {
   getWishlistStatusBatch,
 } from "@/lib/db"
 import type { SearchResult, MediaType } from "@/types"
-
-// Runtime edge for Cloudflare
-export const runtime = "edge"
 
 // Helper to filter by year
 function filterByYear(results: SearchResult[], minYear: number | null): SearchResult[] {
@@ -45,7 +42,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // Get database for library/wishlist checks
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const db = env.DB
 
     // Fetch library and wishlist status in parallel with search

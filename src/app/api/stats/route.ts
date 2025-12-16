@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server"
-import { getRequestContext } from "@cloudflare/next-on-pages"
+import { getCloudflareContext } from "@opennextjs/cloudflare"
 import { getStats } from "@/lib/db"
-
-// Runtime edge for Cloudflare
-export const runtime = "edge"
 
 // GET /api/stats - Get all statistics
 export async function GET() {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const stats = await getStats(env.DB)
 
     return NextResponse.json(stats)

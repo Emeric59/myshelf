@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getRequestContext } from "@cloudflare/next-on-pages"
+import { getCloudflareContext } from "@opennextjs/cloudflare"
 import { getShow, normalizeShow } from "@/lib/api"
 import {
   getUserShows,
@@ -14,13 +14,10 @@ import {
 } from "@/lib/db"
 import type { ShowStatus, Show } from "@/types"
 
-// Runtime edge for Cloudflare
-export const runtime = "edge"
-
 // GET /api/shows - List user's shows or get single show
 export async function GET(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const { searchParams } = new URL(request.url)
     const id = searchParams.get("id")
     const status = searchParams.get("status") as ShowStatus | null
@@ -67,7 +64,7 @@ export async function GET(request: NextRequest) {
 // POST /api/shows - Add a show to library
 export async function POST(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const body = await request.json()
     const { id, status = "to_watch" } = body as {
       id: string
@@ -129,7 +126,7 @@ export async function POST(request: NextRequest) {
 // PATCH /api/shows - Update show status, progress, or rating
 export async function PATCH(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const body = await request.json()
     const { id, status, rating, current_season, current_episode } = body as {
       id: string
@@ -181,7 +178,7 @@ export async function PATCH(request: NextRequest) {
 // DELETE /api/shows - Remove show from library
 export async function DELETE(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const { searchParams } = new URL(request.url)
     const id = searchParams.get("id")
 

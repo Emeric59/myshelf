@@ -24,7 +24,7 @@
 | Database | Cloudflare D1 (SQLite) | Simple, gratuit |
 | Vectors | Cloudflare Vectorize | Embeddings pour recos (optionnel) |
 | IA | Google Gemini 2.5 Flash | Bon rapport qualité/prix + thinking mode |
-| Déploiement | Cloudflare Pages | Auto-deploy depuis Git |
+| Déploiement | Cloudflare Workers (OpenNext) | Auto-deploy depuis Git |
 
 ## Commandes
 
@@ -66,42 +66,44 @@ HARDCOVER_API_KEY=xxx  # Pour les métadonnées livres (genres, tropes, moods)
 4. **Mobile-first** : Toujours designer pour mobile d'abord
 5. **Accessibilité** : Labels, contraste, navigation clavier
 
-## Règles Cloudflare Pages (CRITIQUE)
-
-### Edge Runtime obligatoire
-
-**Toutes les pages dynamiques (`[id]`) ET les API routes DOIVENT avoir :**
-
-```typescript
-export const runtime = 'edge'
-```
-
-Sans cela, le déploiement Cloudflare échouera avec l'erreur :
-```
-The following routes were not configured to run with the Edge Runtime
-```
+## Règles Cloudflare Workers / OpenNext (CRITIQUE)
 
 ### Accès à la base de données D1
 
 ```typescript
-import { getRequestContext } from "@cloudflare/next-on-pages"
+import { getCloudflareContext } from "@opennextjs/cloudflare"
 
 export async function GET() {
-  const { env } = getRequestContext()
+  const { env } = getCloudflareContext()
   const db = env.DB
   // ...
 }
 ```
 
-### Variables d'environnement (process.env)
+### Configuration OpenNext
 
-Pour que `process.env` fonctionne sur Cloudflare Workers, le flag suivant est requis dans `wrangler.toml` :
+Les fichiers de configuration clés :
+- `wrangler.jsonc` : Configuration Cloudflare Workers (bindings D1, secrets)
+- `open-next.config.ts` : Configuration OpenNext
 
-```toml
-compatibility_flags = ["nodejs_compat", "nodejs_compat_populate_process_env"]
+### Commandes de déploiement
+
+```bash
+# Preview local
+npm run preview
+
+# Déploiement production
+npm run deploy
 ```
 
-Sans ce flag, les clés API ne seront pas accessibles via `process.env.HARDCOVER_API_KEY` etc.
+### Variables d'environnement
+
+Les secrets doivent être configurés via Wrangler CLI :
+```bash
+npx wrangler secret put TMDB_API_KEY
+npx wrangler secret put GEMINI_API_KEY
+npx wrangler secret put HARDCOVER_API_KEY
+```
 
 ## TypeScript - Pièges courants
 
@@ -163,10 +165,10 @@ Composant custom dans `src/components/ui/progress.tsx` (pas de Radix).
 ```
 src/
 ├── app/
-│   ├── books/[id]/page.tsx     # runtime = 'edge'
-│   ├── movies/[id]/page.tsx    # runtime = 'edge'
-│   ├── shows/[id]/page.tsx     # runtime = 'edge'
-│   └── api/*/route.ts          # runtime = 'edge'
+│   ├── books/[id]/page.tsx     # Page dynamique
+│   ├── movies/[id]/page.tsx    # Page dynamique
+│   ├── shows/[id]/page.tsx     # Page dynamique
+│   └── api/*/route.ts          # API routes
 ├── lib/
 │   ├── api/
 │   │   ├── openLibrary.ts      # ATTENTION: camelCase !
@@ -175,6 +177,10 @@ src/
 │   └── db/                     # Helpers D1
 └── components/
     └── ui/progress.tsx         # Composant custom
+
+# Fichiers config Cloudflare
+├── wrangler.jsonc              # Config Workers + D1 bindings
+└── open-next.config.ts         # Config OpenNext
 ```
 
 ## APIs externes

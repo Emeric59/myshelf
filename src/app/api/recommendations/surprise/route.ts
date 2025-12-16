@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server"
-import { getRequestContext } from "@cloudflare/next-on-pages"
+import { getCloudflareContext } from "@opennextjs/cloudflare"
 import { getSurpriseRecommendations, buildUserContext } from "@/lib/ai/gemini"
-
-// Runtime edge for Cloudflare
-export const runtime = "edge"
 
 // GET /api/recommendations/surprise - Get surprise recommendations (1 book, 1 movie, 1 show)
 export async function GET() {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
 
     // Récupérer les données utilisateur pour le contexte
     const [booksResult, moviesResult, showsResult, tropesResult, dismissedResult, wishlistResult] = await Promise.all([

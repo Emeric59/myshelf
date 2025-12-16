@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getRequestContext } from "@cloudflare/next-on-pages"
+import { getCloudflareContext } from "@opennextjs/cloudflare"
 import { getChartStats } from "@/lib/db"
-
-// Runtime edge for Cloudflare
-export const runtime = "edge"
 
 // GET /api/stats/charts - Get chart statistics
 export async function GET(request: NextRequest) {
@@ -60,7 +57,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const stats = await getChartStats(env.DB, startDate, endDate, granularity)
 
     return NextResponse.json({

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getRequestContext } from "@cloudflare/next-on-pages"
+import { getCloudflareContext } from "@opennextjs/cloudflare"
 import {
   getWork,
   getWorkEditions,
@@ -42,13 +42,10 @@ interface BookPayload {
   isbn13?: string
 }
 
-// Runtime edge for Cloudflare
-export const runtime = "edge"
-
 // GET /api/books - List user's books or get single book
 export async function GET(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const { searchParams } = new URL(request.url)
     const id = searchParams.get("id")
     const status = searchParams.get("status") as BookStatus | null
@@ -96,7 +93,7 @@ export async function GET(request: NextRequest) {
 // POST /api/books - Add a book to library
 export async function POST(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const body = await request.json()
     const { id, status = "to_read", bookData } = body as {
       id: string
@@ -252,7 +249,7 @@ async function fetchBookDetails(id: string): Promise<Book> {
 // PATCH /api/books - Update book (status, progress, or rating)
 export async function PATCH(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const body = await request.json()
     const { id, status, current_page, rating } = body as {
       id: string
@@ -302,7 +299,7 @@ export async function PATCH(request: NextRequest) {
 // DELETE /api/books - Remove book from library
 export async function DELETE(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const { searchParams } = new URL(request.url)
     const id = searchParams.get("id")
 

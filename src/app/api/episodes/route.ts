@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getRequestContext } from "@cloudflare/next-on-pages"
+import { getCloudflareContext } from "@opennextjs/cloudflare"
 import { getSeason } from "@/lib/api/tmdb"
-
-export const runtime = "edge"
 
 interface WatchedEpisode {
   show_id: string
@@ -32,7 +30,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const db = env.DB
 
     // Get watched episodes for this show
@@ -155,7 +153,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const db = env.DB
 
     const now = new Date().toISOString()
@@ -226,7 +224,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const db = env.DB
 
     if (episodeNumber) {
@@ -299,4 +297,4 @@ async function updateShowProgress(db: D1Database, showId: string) {
 }
 
 // Type declaration for D1Database (from Cloudflare Workers)
-type D1Database = ReturnType<typeof getRequestContext>["env"]["DB"]
+type D1Database = ReturnType<typeof getCloudflareContext>["env"]["DB"]

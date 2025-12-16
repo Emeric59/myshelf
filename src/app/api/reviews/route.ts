@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getRequestContext } from "@cloudflare/next-on-pages"
+import { getCloudflareContext } from "@opennextjs/cloudflare"
 import { getReview, upsertReview, deleteReview, getRecentReviews } from "@/lib/db"
 import type { MediaType } from "@/types"
-
-// Runtime edge for Cloudflare
-export const runtime = "edge"
 
 // GET /api/reviews - Get review for a specific media or list recent reviews
 export async function GET(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const { searchParams } = new URL(request.url)
     const mediaType = searchParams.get("mediaType") as MediaType | null
     const mediaId = searchParams.get("mediaId")
@@ -46,7 +43,7 @@ export async function GET(request: NextRequest) {
 // POST /api/reviews - Create or update a review
 export async function POST(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const body = await request.json()
     const { mediaType, mediaId, rating, reviewText, likedAspects, dislikedAspects } = body as {
       mediaType: MediaType
@@ -98,7 +95,7 @@ export async function POST(request: NextRequest) {
 // DELETE /api/reviews - Delete a review
 export async function DELETE(request: NextRequest) {
   try {
-    const { env } = getRequestContext()
+    const { env } = getCloudflareContext()
     const { searchParams } = new URL(request.url)
     const mediaType = searchParams.get("mediaType") as MediaType | null
     const mediaId = searchParams.get("mediaId")
