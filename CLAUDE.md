@@ -23,7 +23,7 @@
 | Backend | Cloudflare Workers (via OpenNext) | Serverless, pas cher |
 | Database | Cloudflare D1 (SQLite) | Simple, gratuit |
 | Vectors | Cloudflare Vectorize | Embeddings pour recos (optionnel) |
-| IA | Google Gemini 2.5 Flash | Bon rapport qualité/prix + thinking mode |
+| IA | Google Gemini 3 Flash Preview | Plus rapide, meilleur raisonnement + thinking mode |
 | Déploiement | GitHub Actions → Cloudflare Workers | Auto-deploy depuis Git |
 
 ## Commandes
@@ -290,8 +290,11 @@ myshelf/
 
 ### Gemini (IA)
 - SDK: `@google/genai`
-- Modèle: `gemini-2.5-flash` (avec thinking mode activé)
+- Modèle: `gemini-3-flash-preview` (avec thinking mode)
+- Configuration thinking: `thinkingLevel: "high"` (raisonnement approfondi)
 - Utilisé pour: recommandations personnalisées, mode surprise
+- **Note**: Gemini 3 utilise `thinkingLevel` (string) au lieu de `thinkingBudget` (number)
+  - Valeurs possibles: `"minimal"`, `"low"`, `"medium"`, `"high"`
 
 ---
 
@@ -342,3 +345,35 @@ myshelf/
 - [ ] Secrets Cloudflare configurés (`wrangler secret list`)
 - [ ] Domaines images autorisés dans `next.config.ts`
 - [ ] GitHub Actions secrets configurés (CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID)
+
+### Décembre 2025 : Migration Gemini 3 Flash
+
+**Raison :** Google a lancé Gemini 3 Flash (17 déc 2025) avec de meilleures performances et une vitesse 3x supérieure.
+
+**Changements effectués :**
+
+1. **Modèle :**
+   - `gemini-2.5-flash` → `gemini-3-flash-preview`
+
+2. **Configuration thinking mode :**
+   - Ancien: `thinkingBudget: 8192` (nombre de tokens)
+   - Nouveau: `thinkingLevel: "high"` (niveau qualitatif)
+
+3. **Fichier modifié :**
+   - `src/lib/ai/gemini.ts` (2 appels API mis à jour)
+
+**Comparaison des prix :**
+| Modèle | Input (/1M) | Output (/1M) |
+|--------|-------------|--------------|
+| Gemini 2.5 Flash | $0.30 | $2.50 |
+| Gemini 3 Flash | $0.50 | $3.00 |
+
+**Avantages Gemini 3 Flash :**
+- 3x plus rapide
+- Meilleur raisonnement (SWE-bench: 78%, GPQA: 90.4%)
+- 30% moins de tokens utilisés pour le thinking
+
+**Si les recommandations IA ne fonctionnent plus :**
+- [ ] Vérifier que le SDK `@google/genai` est à jour
+- [ ] Vérifier que `GEMINI_API_KEY` est configuré
+- [ ] Le modèle `gemini-3-flash-preview` peut changer de nom (surveiller la doc Google)

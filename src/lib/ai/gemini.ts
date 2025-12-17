@@ -1,9 +1,9 @@
 /**
  * Client Gemini pour les recommandations IA
- * Utilise Gemini 2.5 Flash avec mode thinking
+ * Utilise Gemini 3 Flash Preview avec mode thinking (thinkingLevel: "high")
  */
 
-import { GoogleGenAI } from "@google/genai"
+import { GoogleGenAI, ThinkingLevel } from "@google/genai"
 
 // Types pour les recommandations
 export interface UserContext {
@@ -162,13 +162,13 @@ export async function getRecommendations(
   }
 
   try {
-    // Utiliser Gemini 2.5 Flash avec mode thinking
+    // Utiliser Gemini 3 Flash avec mode thinking
     const result = await genAI.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-flash-preview",
       contents: `${systemPrompt}\n\n---\n\nDemande de l'utilisateur: ${userPrompt}`,
       config: {
         thinkingConfig: {
-          thinkingBudget: 8192, // Budget de réflexion élevé pour des recommandations pertinentes
+          thinkingLevel: ThinkingLevel.HIGH, // Raisonnement approfondi pour des recommandations pertinentes
         },
       },
     })
@@ -315,11 +315,11 @@ IMPORTANT: Exactement 3 recommandations, une de chaque type!`
 
   try {
     const result = await genAI.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-flash-preview",
       contents: `${systemPrompt}\n\n---\n\nGénère 3 recommandations surprise (1 livre, 1 film, 1 série) - des classiques modernes qui correspondent au profil de l'utilisateur.`,
       config: {
         thinkingConfig: {
-          thinkingBudget: 8192,
+          thinkingLevel: ThinkingLevel.HIGH,
         },
       },
     })
